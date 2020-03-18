@@ -7,7 +7,8 @@ namespace MagicRoyale_TeleportAndFire.App
     {
         public DbSet<User> Users { get; set; }
 
-        public MagicRoyaleDbContext()
+        public MagicRoyaleDbContext(DbContextOptions<MagicRoyaleDbContext> options)
+            : base(options)
         {
             Database.EnsureCreated();
         }
