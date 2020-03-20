@@ -24,15 +24,15 @@ namespace MagicRoyale_TeleportAndFire.App
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-        public void ConfigureServices(IServiceCollection services)
+        public void ConfigureServices(IServiceCollection services) // Для DI
         {
             string connection = Configuration.GetConnectionString("DefaultConnection");
-            services.AddDbContext<MagicRoyaleDbContext>(options => options.UseSqlServer(connection));
+            services.AddDbContext<MagicRoyaleDbContext>(options => options.UseSqlServer(connection)); // Регистрируем в DI базу данных
             services.AddControllersWithViews();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env) // Настройки хоста (не трогаем)
         {
             if (env.IsDevelopment())
             {

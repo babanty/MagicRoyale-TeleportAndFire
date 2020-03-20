@@ -4,19 +4,25 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace MagicRoyale_TeleportAndFire.App
 {
-public class Program
+    public class Program
     {
         public static void Main(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
+            var host = CreateHostBuilder(args).Build();
 
-            using (MagicRoyaleDbContext db = new MagicRoyaleDbContext())
+            // заполняем новую базу данных необходимыми данными и отправляем ее другим сборкам
+            using (var scope = host.Services.CreateScope())
             {
+                var services = scope.ServiceProvider;
+
+                var db = services.GetRequiredService<MagicRoyaleDbContext>();
+
                 // создаем два объекта User
                 User user1 = new User { Name = "Tom" };
                 User user2 = new User { Name = "Alice" };
