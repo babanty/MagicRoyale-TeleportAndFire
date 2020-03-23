@@ -1,4 +1,10 @@
-"use strict";
+function initialize() {
+    var el = document.getElementById('content');
+    var canvas = new Canvas(el);
+}
+window.onload = function () {
+    initialize();
+};
 //class Greeter {
 //    element: HTMLElement;
 //    span: HTMLElement;
@@ -17,10 +23,4 @@
 //        clearTimeout(this.timerToken);
 //    }
 //}
-Object.defineProperty(exports, "__esModule", { value: true });
-window.onload = function () {
-    var el = document.getElementById('content');
-    var Canvas = new Canvas(el);
-    //greeter.start();
-};
 //# sourceMappingURL=app.js.map

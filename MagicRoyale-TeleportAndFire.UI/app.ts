@@ -1,4 +1,16 @@
-﻿//class Greeter {
+﻿function initialize() {
+    let el = document.getElementById('content');
+    let canvas = new Canvas(el);
+}
+
+
+window.onload = () => {
+    initialize();
+};
+
+
+
+//class Greeter {
 //    element: HTMLElement;
 //    span: HTMLElement;
 //    timerToken: number;
@@ -16,11 +28,3 @@
 //        clearTimeout(this.timerToken);
 //    }
 //}
-
-//import Canvas from "./engineCore/canvas";
-
-window.onload = () => {
-    var el = document.getElementById('content');
-    var Canvas = new Canvas(el);
-    //greeter.start();
-};

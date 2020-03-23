@@ -1,6 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-/** Класс, отвечающий за canvas (html5) внутри которого все отрисовывается)) */
+/** Класс, отвечающий за canvas (html5) внутри которого все отрисовывается */
 var Canvas = /** @class */ (function () {
     /** Конструктор класса отвечающего за canvas
      * @constructor
@@ -42,5 +40,4 @@ var Canvas = /** @class */ (function () {
     };
     return Canvas;
 }());
-exports.default = Canvas;
 //# sourceMappingURL=canvas.js.map
