@@ -1,4 +1,5 @@
-﻿//class Greeter {
+"use strict";
+//class Greeter {
 //    element: HTMLElement;
 //    span: HTMLElement;
 //    timerToken: number;
@@ -16,11 +17,10 @@
 //        clearTimeout(this.timerToken);
 //    }
 //}
-
-//import Canvas from "./engineCore/canvas";
-
-window.onload = () => {
+Object.defineProperty(exports, "__esModule", { value: true });
+window.onload = function () {
     var el = document.getElementById('content');
     var Canvas = new Canvas(el);
     //greeter.start();
 };
+//# sourceMappingURL=app.js.map

@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MagicRoyale-TeleportAndFire
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MagicRoyale-TeleportAndFire.UI", "MagicRoyale-TeleportAndFire.UI\MagicRoyale-TeleportAndFire.UI.csproj", "{2574F603-4B6C-4A30-BFDD-E3BC09EEDFDF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MagicRoyale-TeleportAndFire.Storage", "MagicRoyale-TeleportAndFire\MagicRoyale-TeleportAndFire.Storage.csproj", "{DC374A59-CE5D-4412-98FA-6ED3847A2D9E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MagicRoyale-TeleportAndFire.Storage", "MagicRoyale-TeleportAndFire\MagicRoyale-TeleportAndFire.Storage.csproj", "{DC374A59-CE5D-4412-98FA-6ED3847A2D9E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
