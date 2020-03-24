@@ -15,7 +15,7 @@ namespace MagicRoyale_TeleportAndFire.App
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=localhost;Database=master;Trusted_Connection=True;");
+            optionsBuilder.UseSqlServer("Server=localhost;Database=TestDb;Trusted_Connection=True;MultipleActiveResultSets=true;Connect Timeout=15;Encrypt=False;Packet Size=4096");
         }
     }
 }
