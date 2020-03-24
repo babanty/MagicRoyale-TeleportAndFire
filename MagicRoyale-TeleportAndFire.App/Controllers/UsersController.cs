@@ -12,10 +12,17 @@ namespace MagicRoyale_TeleportAndFire.App.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
+        private readonly IUsersManager _usersManager;
+        
+        public UsersController(IUsersManager usersManager)
+        {
+            _usersManager = usersManager;
+        }
+
         [HttpPost, Consumes("application/json")]
         public async Task<User> Create([FromBody] CreateUserRequest request)
         {
-            return await Create(request);
+            return await _usersManager.Create(request);
         }
     }
 }
