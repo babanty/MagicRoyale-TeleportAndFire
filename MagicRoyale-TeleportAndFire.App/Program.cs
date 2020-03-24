@@ -14,7 +14,7 @@ namespace MagicRoyale_TeleportAndFire.App
     {
         public static void Main(string[] args)
         {
-            
+            CreateHostBuilder(args).Build().Run();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
