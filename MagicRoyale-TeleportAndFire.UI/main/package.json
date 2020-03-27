@@ -1,0 +1,28 @@
+{
+  "name": "magic_royale_teleport_and_fire",
+  "version": "0.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "devWebpack": "webpack --mode development",
+    "build": "webpack --mode production",
+    "watch": "webpack --mode development --watch",
+    "dev": "webpack-dev-server --mode development"
+  },
+  "author": "a.s.tkachuk <tkachuk.aleksandr.sergeevich@gmail.com>",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "clean-webpack-plugin": "^3.0.0",
+    "copy-webpack-plugin": "^5.1.1",
+    "css-loader": "^3.4.2",
+    "html-webpack-plugin": "^4.0.2",
+    "i": "^0.3.6",
+    "style-loader": "^1.1.3",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3"
+  },
+  "dependencies": {
+    "normalize.css": "^8.0.1"
+  }
+}
