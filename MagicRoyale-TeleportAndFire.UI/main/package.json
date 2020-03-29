@@ -4,16 +4,21 @@
   "description": "",
   "private": true,
   "scripts": {
-    "devWebpack": "webpack --mode development",
+    "devWebpack": "cross-env NODE_ENV=development webpack --mode development",
     "build": "webpack --mode production",
-    "watch": "webpack --mode development --watch",
-    "dev": "webpack-dev-server --mode development"
+    "watch": "cross-env NODE_ENV=development webpack --mode development --watch",
+    "dev": "cross-env NODE_ENV=development webpack-dev-server --mode development"
   },
   "author": "a.s.tkachuk <tkachuk.aleksandr.sergeevich@gmail.com>",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/preset-env": "^7.9.0",
+    "@babel/preset-typescript": "^7.9.0",
+    "babel-loader": "^8.1.0",
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^5.1.1",
+    "cross-env": "^7.0.2",
     "css-loader": "^3.4.2",
     "html-webpack-plugin": "^4.0.2",
     "i": "^0.3.6",
@@ -23,6 +28,8 @@
     "webpack-dev-server": "^3.10.3"
   },
   "dependencies": {
+    "@babel/polyfill": "^7.8.7",
     "normalize.css": "^8.0.1"
-  }
+  },
+  "browserslist": "> 0.25%, not dead"
 }
