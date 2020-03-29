@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.8.7",
+    "guid-typescript": "^1.0.9",
     "normalize.css": "^8.0.1"
   },
   "browserslist": "> 0.25%, not dead"
