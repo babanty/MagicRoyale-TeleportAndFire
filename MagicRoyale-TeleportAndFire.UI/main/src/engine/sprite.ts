@@ -1,35 +1,8 @@
-// - Манипуляции с объектом:
-//   -- отрисовать спрайт
-//   -- типизация спрайта
-//   -- крутить спрайт на 360 градусов
-//   -- менять ширину, высоту, x,y координаты
-//   -- масштабировать картинку (уменьшать\увеличивать)
-//   -- указывать фигуру, чтобы пропускать клики в пустоту
-//   -- задавать вектор движения
-//   -- принимать функции:
-//     -- реакция на события:
-//        -- начался новый шаг
-//        -- навели мышь
-//        -- кликнули мышью\пальцем
-//        -- [может быть]: нажали\отжали мышь\ зажали
-// - Рендеринг:
-//   -- отрисовывать\прятать спрайт
-//   -- поддерживать слои
-//   -- поддерживать поддерживать прозрачность и svg 
-//   -- поддерживать анимацию
-//   -- сделать координаты спрайта статическими
-//   -- [может быть] делать возможным смещение при отрисовке 
-//   -- пропускать клик по объекту.  Может отрисовываться выше всех по слою, но при нажатии пропускает клик и отдаем ему того кто ниже
-//   -- [может быть] возможность рисовать фигуры
-//   -- [может быть] писать текст поверх картинки спрайта
-//   -- [v1] назначать фон (отличается тем, что не является спрайтом)
-//      -- замостить некий фот
-//      -- [может быть] получить массив координат блоков фона и отрисовывать их
-
 import { Guid } from "guid-typescript";
 import { X_Y } from "./common";
 
-export default abstract class Sprite{
+/** Любой объект на игровой карте */
+export abstract class Sprite{
 
     // Обязательные поля
     /** id. Желательно должен соотвествовать тому, что лежит на сервере */
@@ -81,11 +54,10 @@ export default abstract class Sprite{
     /** картинка спрайта, отрисовывающася на canvas */
     protected _image: HTMLImageElement;
 
-    /** Конструктор класса отвечающего за canvas
+    /** Конструктор класса игрового объекта на карте
      * @constructor
      * @param id - id. Желательно должен соотвествовать тому, что лежит на сервере
-     * @param canvasIsMainElement - путь до картинки. Например './image/myPic.jpg'
-     * @param scale - масштаб (размер относительно реального), где 1 - это 1 к одному
+     * @param layer -слой на котором производится отрисовка
      */
     constructor(id: Guid, layer: number) {
         this.id = id;
@@ -99,8 +71,15 @@ export default abstract class Sprite{
             this.width = this.image.width * scale;
             this.height = this.image.height * scale;
         }
+
+        let lol = setInterval(function () {}, 500);
     }
 
+    /** вставить\заменить картинку спрайту 
+     * @param image - собственно, картинка
+     * @param scale - изменение ее размера в %, где 1 - это 1 к одному
+     * @param figure - указать "фигуру", например согласно ней будет работать реакция на клик мышью
+    */
     public setImage (image: HTMLImageElement, scale: number = 1, figure: MaskFigure = MaskFigure.rectangle){
         this._image = image;
         this.scale = scale;
@@ -147,10 +126,73 @@ export class SpriteAnimation{
     public timeBetweenFrame: number;
     /** ширина нарезного кадра */
     public widthSlicedOneFrame: number;
+    /** какой кадр отрисовать следующим. 0 - значит рисовать с первого. Если указать число большее чем frameNum, то будет 0 */
+    public frameNumNext: number = 0;
+    /** активна ли анимация (true) или она на паузе (false) */
+    public get isActive(): boolean{return this._isActive};
     /** наступило ли время отрисовки следующего кадра */
-    public isTimeDrawNewFrame: boolean = true;
-    /** содежрит в себе счетчик время как часто надо менять isTimeDrawNewFrame на true, зависит от timeBetweenFrame */
-    public counterFrame: number;
-    /** какой кадр отрисовался последним */
-    public frameNumNow: number = -1;
+    public get isTimeDrawNextFrame(): boolean{return this._isTimeDrawNextFrame};
+    /** наступило ли время отрисовки следующего кадра */
+    public set isTimeDrawNextFrame(isTimeDrawNextFrame: boolean) {this._isTimeDrawNextFrame = isTimeDrawNextFrame};
+
+    /** активна ли анимация (true) или она на паузе (false) */
+    protected _isActive: boolean;
+    /** наступило ли время отрисовки следующего кадра */
+    protected _isTimeDrawNextFrame: boolean = true;
+    /** содежрит в себе счетчик время как часто надо менять isTimeDrawNewFrame на true, зависит от timeBetweenFrame.
+     *  Как получить этот объект: возвращает setInterval*/
+    protected _counterFrame: NodeJS.Timeout;
+
+    /** Конструктор класса 
+     * @constructor
+     * @param id - id. Желательно должен соотвествовать тому, что лежит на сервере
+     */
+    constructor(frameNum: number, timeBetweenFrame: number, 
+                widthSlicedOneFrame: number, doStart: boolean = true, frameNumNext: number = 0) {
+        this.frameNum = frameNum;
+        this.timeBetweenFrame = timeBetweenFrame;
+        this.widthSlicedOneFrame = widthSlicedOneFrame;
+        
+        if(doStart) this.doStart();
+    }
+
+    /** стартануть анимацию 1 раз целиком */
+    doStart(){
+        this._isActive = true;
+        this._isTimeDrawNextFrame = true;
+        
+        // делаем функцию вызывающую раз внекоторое время вложенную стрелочную ф-ию со сменой кадра
+        this._counterFrame = setInterval(() => {
+            if(this.frameNumNext === this.frameNum - 1){ // если уже последний кадр, то очищаем интервал
+                this.doStop();
+            } else { // если все хорошо и анимация еще идет
+                this.frameNumNext += 1
+                this._isTimeDrawNextFrame = true
+            }
+            
+        }, this.timeBetweenFrame);
+    }
+
+    /** зациклить анимацию, то есть она постоянно будет повторяться */
+    doLoop(){
+        this._isActive = true;
+        this._isTimeDrawNextFrame = true;
+
+        // делаем функцию вызывающую раз внекоторое время вложенную стрелочную ф-ию со сменой кадра
+        this._counterFrame = setInterval(() => {this.frameNumNext += 1; this._isTimeDrawNextFrame = true}, this.timeBetweenFrame);
+    }
+
+    /** паузнуть анимацию. Снять с паузы - doStart\doLoop */
+    doPause(){
+        this._isActive = false;
+        clearInterval(this._counterFrame); // удаляем функцию вызывающую раз внекоторое время смену кадра
+    }
+
+    /** остановить и "обнулить" анимацию на начало */
+    doStop(){
+        this._isActive = false;
+        this._isTimeDrawNextFrame = false;
+        clearInterval(this._counterFrame); // удаляем функцию вызывающую раз внекоторое время смену кадра
+        this.frameNumNext = 0;
+    }
 }
