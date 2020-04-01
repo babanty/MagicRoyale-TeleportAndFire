@@ -6,7 +6,7 @@ export abstract class Sprite{
 
     // Обязательные поля
     /** id. Желательно должен соотвествовать тому, что лежит на сервере */
-    public id: Guid;        
+    public id: Guid;
     /** ширина картинки */
     public width: number;      
     /** высота картинки */
