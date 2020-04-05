@@ -6,38 +6,38 @@
 
 /** класс со статическими ф-ия дающими ответ что за мобильное или нет нет устройство */
 export class WhatIsDevice{
-    static isAnyMobile() : boolean{
+    public static isAnyMobile() : boolean{
         return WhatIsDevice.isAndroid() 
                 || WhatIsDevice.isBlackBerry() 
                 || WhatIsDevice.isiOS() 
                 || WhatIsDevice.isOpera() 
                 || WhatIsDevice.isWindows();   
     }
-    static isAndroid() : boolean{
+    public static isAndroid() : boolean{
         if(navigator.userAgent.match(/Android/i).length > 0){
             return true;
         }
         return false    
     }
-    static isBlackBerry() : boolean{
+    public static isBlackBerry() : boolean{
         if(navigator.userAgent.match(/BlackBerry/i).length > 0){
             return true;
         }
         return false    
     }
-    static isiOS() : boolean{
+    public static isiOS() : boolean{
         if(navigator.userAgent.match(/iPhone|iPad|iPod/i).length > 0){
             return true;
         }
         return false    
     }
-    static isOpera() : boolean{
+    public static isOpera() : boolean{
         if(navigator.userAgent.match(/Opera Mini/).length > 0){
             return true;
         }
         return false    
     }
-    static isWindows() : boolean{
+    public static isWindows() : boolean{
         if(navigator.userAgent.match(/IEMobile/i).length > 0){
             return true;
         }

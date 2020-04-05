@@ -47,7 +47,7 @@ export class Render{
      * @param canvasElement - [NotNull] canvas - html5-элемент внутри которого все отрисовывается
      * @param camera - [NotNull] класс отвечающий за камеру (глаза игрока) в игре
      */
-    constructor(canvasElement: HTMLCanvasElement, camera: Camera) {
+    public constructor(canvasElement: HTMLCanvasElement, camera: Camera) {
         // валидация
         if(!canvasElement || !camera){
             throw new Error("Класс Render неверно проинициализирован. Аргумент конструктора null.");
@@ -67,7 +67,7 @@ export class Render{
      *  - поддерживает статические спрайты (sprite.isStaticCoordinates)
      *  - поддерживает смещение (sprite.offsetPic)
     */
-    RenderSprites(sprites: Sprite[]){
+    public renderSprites(sprites: Sprite[]){
 
         this.clearCanvas() // очищаем холст
         
@@ -75,7 +75,10 @@ export class Render{
         let clearedSprites = this.clearSrpites(sprites);
 
         // получаем готовые к отрисовке "обертки спрайта" (например координаты, с учетом камеры, нарезанная анимация и т.д.)
-        let spriteWrappers = this.getSpriteWrappers(clearedSprites);
+        let spriteWrappers: SpriteWrapper[];
+        for(let sprite of clearedSprites){
+            spriteWrappers.push(this.getSpriteWrapper(sprite));
+        }
 
         // сортируем спрайты
         let sortedSpriteWrappers = this.sortSritesForRender(spriteWrappers);
@@ -88,14 +91,14 @@ export class Render{
 
 
     /** отрисовать статические картинки, например фон */
-    RenderStaticPucture(picture: HTMLImageElement, x: number, y: number){
+    public renderStaticPicture(picture: HTMLImageElement, x: number, y: number){
         alert("RenderStaticPucture - Не сделано :(");
         throw new Error("RenderStaticPucture - Не сделано :(");
     }
 
 
     /** Замостить фон некоторой картинкой (желательно безшовной) */
-    BackgroundRepeat(){
+    public backgroundRepeat(){
         alert("BackgroundRepeat - Не сделано :(");
         throw new Error("BackgroundRepeat - Не сделано :(");        
     }
@@ -132,12 +135,23 @@ export class Render{
     }
 
 
-    /** получаем готовые к отрисовке переработанные "обертки спрайта"
+    /** получаем готовый к отрисовке переработанную "обертку спрайта"
      * 1. координаты изменены, с учетом камеры
      * 2. если спрайт - анимация, то тут уже нужных срез картинки 
      * 3. если у спрайта указано смещение, то изменяем координаты согласно смещению */
-    protected getSpriteWrappers(sprites: Sprite[]) : SpriteWrapper[]{
+    protected getSpriteWrapper(sprite: Sprite) : SpriteWrapper{
+        let result: SpriteWrapper;
+        result.spriteId = sprite.id;
+        result.layer = sprite.layer;
+        result.picture = sprite.image;
+        result.rotate = sprite.rotate;
 
+        !; тут не сделали
+        result.coordinates;
+        result.width
+        result.height;
+
+        return result;
     }
 
     /** отрисовать обернутый спрайт на холсте 

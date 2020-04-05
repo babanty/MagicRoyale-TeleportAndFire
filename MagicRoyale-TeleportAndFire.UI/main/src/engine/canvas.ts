@@ -15,7 +15,7 @@ export default class Canvas {
      * @param parrentElement - html-элемент (div) внутри которого будет создан canvas
      * @param canvasIsMainElement - является ли canvas главным элементом на странице, что обозначает, что он должен быть во весь экран 
      */
-    constructor(parrentElement: HTMLElement, canvasIsMainElement: boolean = true) {
+    public constructor(parrentElement: HTMLElement, canvasIsMainElement: boolean = true) {
         this.parrentElement = parrentElement;
         this.canvasIsMainElement = canvasIsMainElement;
 
@@ -27,25 +27,25 @@ export default class Canvas {
     }
 
     /** объеединяющий метод вызвающий прочие методы по созданию html-элемента canvas */
-    createCanvas() {
+    protected createCanvas() {
         this.createCanvasHtml();
         this.createCanvasCss();
     }
 
     /** метод по созданию html-тега на странице */
-    createCanvasHtml() {
+    protected createCanvasHtml() {
         this.canvasElement = document.createElement('canvas');
         this.parrentElement.appendChild(this.canvasElement);
         this.canvasElement.innerHTML += "Извините, ваш браузер не поддерживает тег canvas"; // фраза по умолчанию вырисовыается, если не отрисовался канвас
     }
 
     /** метод по наполнению canvas-элемента стартартному css-свойствами */
-    createCanvasCss() {
+    protected createCanvasCss() {
         this.canvasElement.style.zIndex = "1"; // z - координата элемента (глубина, уровень на котором располагается элемент)
     }
 
     /** метод по наполнению canvas-элемента css-свойствами если сказали сделать его на весь экран браузера */
-    canvasToFullDocument() {
+    protected canvasToFullDocument() {
         this.canvasElement.style.position = "absolute"; // чтобы элемент располагался по абсолютным координатам
         this.canvasElement.style.overflow = "hidden";   // TODO [refactor] - не известно для чего, возможно удалить
         this.canvasElement.style.top = "0";             // чтобы элемент был в упор к левому верхнему краю браузера

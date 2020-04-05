@@ -63,7 +63,7 @@ export abstract class Sprite{
      * @param id - id. Желательно должен соотвествовать тому, что лежит на сервере
      * @param layer -слой на котором производится отрисовка
      */
-    constructor(id: Guid, layer: number) {
+    public constructor(id: Guid, layer: number) {
         this.id = id;
         this.layer = layer;
     }
@@ -111,15 +111,15 @@ export interface ActInGameLoop {
 /** вектор перемещения. Если он задается, то каждый такт спрайт изменяет свою координату */
 export class Vector{
     /** актуален ли вектор, двигается ли объект */
-    isGo: boolean;
+    public isGo: boolean;
     /** x,y стартовые (пересчитывается при изменении масштаба) */
-    startCoordinates: X_Y; 
+    public startCoordinates: X_Y; 
     /** x,y конечные (пересчитывается при изменении масштаба) */
-    endCoordinates: X_Y;
+    public endCoordinates: X_Y;
     /** скорость % от всего пути в секунду */
-    speed: number;
+    public speed: number;
     /** время старта движения вектора. Здесь мс секунды от начала времен */
-    timeStart: number
+    public timeStart: number
 }
 
 
