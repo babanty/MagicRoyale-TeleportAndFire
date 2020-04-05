@@ -141,15 +141,57 @@ export class Render{
      * 3. если у спрайта указано смещение, то изменяем координаты согласно смещению */
     protected getSpriteWrapper(sprite: Sprite) : SpriteWrapper{
         let result: SpriteWrapper;
+        if(sprite.animation){ // если это анимация, то создается одна спрайт-обертка под анимацию
+            result = new SpriteAnimationWrapper();
+        }else{ // иначе созадется простая спрайт-обертка
+            result = new SpriteWrapper();
+        }
+
+        // первичный маппинг "в тупую"
         result.spriteId = sprite.id;
         result.layer = sprite.layer;
         result.picture = sprite.image;
         result.rotate = sprite.rotate;
+        result.width = sprite.width;
+        result.height = sprite.height;
+        result.coordinates = new X_Y(sprite.coordinates.x, sprite.coordinates.y);
 
-        !; тут не сделали
-        result.coordinates;
-        result.width
-        result.height;
+        // Начинается логика
+
+        // если это анимация
+        if(result instanceof SpriteAnimationWrapper){
+            // высчитываем левую верхнюю координату нарезного кадра в общей картинке
+            (result as SpriteAnimationWrapper).leftUpCoordinatesSlicedOneFrame = new X_Y(
+                // x = ширина нарезного кадра * номер кадра
+                sprite.animation.widthSlicedOneFrame * sprite.animation.frameNumNext,
+                // y = 0 т.к. у на не поддерживаются многоэтажные общие картинки анимации
+                0
+            );
+            (result as SpriteAnimationWrapper).widthSlicedOneFrame = sprite.animation.widthSlicedOneFrame;
+            (result as SpriteAnimationWrapper).heightSlicedOneFrame = sprite.image.height; // высота нарезного 
+                                                        // кадра = 100% от высоты общей картинки т.к. у наc 
+                                                        // не поддерживаются многоэтажные общие картинки анимации
+        }
+
+        // ширина и высота учитывают масштаб карты
+        if(sprite.isStaticCoordinates !== true){ // на статические спрайты не распространяется
+            result.width = result.width * this.camera.scaleMap;
+            result.height = result.height * this.camera.scaleMap;
+        }
+
+        // учитываем смещение (отклонение) для x,y-координат спрайта
+        result.coordinates.x = result.coordinates.x + sprite.offsetPic.x;
+        result.coordinates.y = result.coordinates.y + sprite.offsetPic.y;
+
+        // учитываем параметры камеры
+        if(sprite.isStaticCoordinates !== true){ // на статические спрайты не распространяется
+            // умножаем координаты спрайта на масштаб;
+            // умножаем координаты камеры на масштаб;
+            // смещаем координаты на положение камеры
+            result.coordinates.x = (result.coordinates.x * this.camera.scaleMap) + (this.camera.coordinates.x  * this.camera.scaleMap)
+            result.coordinates.y = (result.coordinates.y * this.camera.scaleMap) + (this.camera.coordinates.y  * this.camera.scaleMap)
+        }
+
 
         return result;
     }
@@ -161,16 +203,32 @@ export class Render{
         // сохраняем нормальные настройки канваса манипуляциями (например, кручением)
         this.canvasContext.save(); 
 
+        // делаем центр холста у этой картинки
+        this.canvasContext.translate(sprite.coordinates.x, sprite.coordinates.y); 
+        this.canvasContext.translate(sprite.width / 2, sprite.height / 2);
+
         // крутим канвас если у картинку указано, что ее нужно крутануть 
-        if(sprite.rotate && sprite.rotate !== 0){
-            this.canvasContext.translate(sprite.coordinates.x, sprite.coordinates.y); // делаем центр холста у этой картинки
-            this.canvasContext.translate(sprite.width / 2, sprite.height / 2); // делаем центр холста у этой картинки
+        if(sprite.rotate){
             this.canvasContext.rotate(inRadians(sprite.rotate)); // поворачиаем все что дальше будет отрисовано
         }
 
         // рисуем картинку
-        this.canvasContext.drawImage(sprite.picture, sprite.coordinates.x, 
-                                    sprite.coordinates.y, sprite.width, sprite.height)
+        if(sprite instanceof SpriteAnimationWrapper){ // если анимация
+            let spriteAnimantion = sprite as SpriteAnimationWrapper;
+            this.canvasContext.drawImage(spriteAnimantion.picture, 
+                spriteAnimantion.leftUpCoordinatesSlicedOneFrame.x, // x - координата левого верхнего угла вырезаемого кадра в общей картинке
+                spriteAnimantion.leftUpCoordinatesSlicedOneFrame.y, // y - координата левого верхнего угла вырезаемого кадра в общей картинке
+                spriteAnimantion.widthSlicedOneFrame, // ширина вырезаемого кадра
+                spriteAnimantion.heightSlicedOneFrame, // высота вырезамого кадра
+                -(spriteAnimantion.width / 2), -(spriteAnimantion.height / 2), // здесь x,y, где рисовать картинку, но здесь так, 
+                                                                               // потому что ранее мы изменили центр canvas-а
+                spriteAnimantion.width, spriteAnimantion.height) // ширина и высота рисуемой картинки
+        }else{ // если не анимация
+            this.canvasContext.drawImage(sprite.picture, 
+                -(sprite.width / 2), -(sprite.height / 2), // вместо x,y здесь так, потому что ранее мы изменили центр canvas-а
+                sprite.width, sprite.height)
+        }
+
 
          // сбрасываем настройки канваса после всех манипуляций (например, кручения)
         this.canvasContext.restore();
@@ -204,6 +262,16 @@ class SpriteWrapper{
     public set spriteId (spriteId: Guid){
         this._spriteId = Guid.parse(spriteId.toString());
     }
+}
+
+/** если спрайт - анимация, то у него есть дополнительные поля */
+class SpriteAnimationWrapper extends SpriteWrapper{
+    /** координаты левого верхнего угла вырезаемого кадра в общей картинке */
+    public leftUpCoordinatesSlicedOneFrame: X_Y; 
+    /**  ширина вырезаемого кадра из общей картинки */
+    public widthSlicedOneFrame: number;
+    /**  высота вырезаемого кадра из общей картинки */
+    public heightSlicedOneFrame: number;
 }
 
 
