@@ -1,6 +1,6 @@
 export class X_Y{
-    public x: Number;
-    public y: Number;
+    public x: number;
+    public y: number;
 }
 
 /** "усыпить исполнение кода" 

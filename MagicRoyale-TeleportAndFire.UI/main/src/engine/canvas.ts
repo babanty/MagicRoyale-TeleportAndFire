@@ -2,7 +2,7 @@
 export default class Canvas {
 
     /** canvas - html5-элемент внутри которого все отрисовывается */
-    public canvasElement: HTMLElement;
+    public canvasElement: HTMLCanvasElement;
 
     /** element - html-элемент (div) внутри которого будет создан canvas */
     private parrentElement: HTMLElement;

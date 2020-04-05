@@ -8,28 +8,82 @@
 //      -- [может быть] получить массив координат блоков фона и отрисовывать их
 
 import { Sprite, MaskFigure } from "./sprite";
+import { Camera } from "./camera";
+import { Guid } from "guid-typescript";
+import { X_Y } from "./common";
 
 /** класс отвечающий за "отрисовку" на канвасе объектов */
 export class Render{
 
+    // Публичные поля
+    /** canvas - html5-элемент внутри которого все отрисовывается */
+    public get canvasElement(): HTMLCanvasElement{return this._canvasElement};
+    /** класс отвечающий за камеру (глаза игрока) в игре */
+    public get camera(): Camera{return this._camera};
+    
 
-    /** Конструктор класса -отвечающего за "отрисовку" на канвасе объектов
-     * @constructor
-     */
-    constructor() {
+    // Приватные поля
+    /** контекст холста. Именно с помощью него можно все рисовать, а не html-элемента. */
+    protected canvasContext: CanvasRenderingContext2D;
+    /** [изменять через canvasElement] canvas - html5-элемент внутри которого все отрисовывается */
+    protected _canvasElement: HTMLCanvasElement;
+    /** класс отвечающий за камеру (глаза игрока) в игре */
+    protected _camera: Camera;
+
+    // Setter-ы свойств
+    /** установить canvas - html5-элемент внутри которого все отрисовывается */
+    public set canvasElement (canvasElement: HTMLCanvasElement) {
+        this.canvasContext = canvasElement.getContext('2d'); // Создаем 2d пространство, с ним далее работаем
+        this._canvasElement = canvasElement;
+    }
+    /** установить камеру (глаза игрока) в игре */
+    public set camera (camera: Camera){
+        this._camera = camera;
     }
 
 
-    /** отрисовать все спрайты, что сюда закинут. Рисуются "сверху вниз" по нижней y-кооридинате спрайта */
-    RenderSprites(sprites: Sprite[]){
-        // Как отрисовывать?
-        // - не рисовать "скрытых"
-        // - поддержать "слоеность"
-        // - сверху-вниз по нижней y-кооридинате спрайта
-        // - отрисовывать картинки и анимацию с возможностью смещения
+    /** Конструктор класса -отвечающего за "отрисовку" на канвасе объектов
+     * @constructor
+     * @param canvasElement - [NotNull] canvas - html5-элемент внутри которого все отрисовывается
+     * @param camera - [NotNull] класс отвечающий за камеру (глаза игрока) в игре
+     */
+    constructor(canvasElement: HTMLCanvasElement, camera: Camera) {
+        // валидация
+        if(!canvasElement || !camera){
+            throw new Error("Класс Render неверно проинициализирован. Аргумент конструктора null.");
+        }
 
-        alert("RenderSprites - Не сделано :(");
-        throw new Error("RenderSprites - Не сделано :(");
+        this.canvasElement = canvasElement;
+        this.camera = camera;
+    }
+
+
+    /** Отрисовать указанные спрайты.
+     *  Как отрисовывает?
+     *  - не рисует "скрытых" (sprite.isHidden)
+     *  - поддерживает слои (sprite.layer)
+     *  - рисует "сверху-вниз" по y-координате правого нижнего края картинки
+     *  - поддерживает анимацию (sprite.animation)
+     *  - поддерживает статические спрайты (sprite.isStaticCoordinates)
+     *  - поддерживает смещение (sprite.offsetPic)
+    */
+    RenderSprites(sprites: Sprite[]){
+
+        this.clearCanvas() // очищаем холст
+        
+        // очищаем от спрайтов, которые не нужно рисовать (например, у которых стоит isHidden === true)
+        let clearedSprites = this.clearSrpites(sprites);
+
+        // получаем готовые к отрисовке "обертки спрайта" (например координаты, с учетом камеры, нарезанная анимация и т.д.)
+        let spriteWrappers = this.getSpriteWrappers(clearedSprites);
+
+        // сортируем спрайты
+        let sortedSpriteWrappers = this.sortSritesForRender(spriteWrappers);
+
+        // отрисовываем подготовленные спрайты
+        for(let sprite of sortedSpriteWrappers){
+            this.drawSrpiteWrapperOnCanvas(sprite);
+        }
     }
 
 
@@ -39,9 +93,95 @@ export class Render{
         throw new Error("RenderStaticPucture - Не сделано :(");
     }
 
+
     /** Замостить фон некоторой картинкой (желательно безшовной) */
     BackgroundRepeat(){
         alert("BackgroundRepeat - Не сделано :(");
         throw new Error("BackgroundRepeat - Не сделано :(");        
     }
+
+
+    /** очищаем холст (делаем полностью белым) */
+    protected clearCanvas(){
+        this.canvasContext.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height); 
+    }
+
+
+    /** сортируем спрайты: 
+     * 1. согласно слою;
+     * 2. "сверху-вниз" по нижней y-кооридинате спрайта; */
+    protected sortSritesForRender(sprites: SpriteWrapper[]) : SpriteWrapper[] {
+
+    }
+
+
+    /** очищаем массив спрайтов от тех, которые не нужно рисовать: 
+     * 1. спрайты, у которых стоит isHidden === true;  */
+    protected clearSrpites(sprites: Sprite[]) : Sprite[] {
+        return sprites.filter(sprite => sprite.isHidden !== true)
+    }
+
+    
+    /** получаем готовые к отрисовке переработанные "обертки спрайта"
+     * 1. координаты изменены, с учетом камеры
+     * 2. если спрайт - анимация, то тут уже нужных срез картинки 
+     * 3. если у спрайта указано смещение, то изменяем координаты согласно смещению */
+    protected getSpriteWrappers(sprites: Sprite[]) : SpriteWrapper[]{
+
+    }
+
+    /** отрисовать обернутый спрайт на холсте 
+     * 1. поддерживает кручение
+    */
+    protected drawSrpiteWrapperOnCanvas(sprite: SpriteWrapper){
+        // сохраняем нормальные настройки канваса манипуляциями (например, кручением)
+        this.canvasContext.save(); 
+
+        // крутим канвас если у картинку указано, что ее нужно крутануть 
+        if(sprite.rotate && sprite.rotate !== 0){
+            this.canvasContext.translate(sprite.coordinates.x, sprite.coordinates.y); // делаем центр холста у этой картинки
+            this.canvasContext.translate(sprite.width / 2, sprite.height / 2); // делаем центр холста у этой картинки
+            this.canvasContext.rotate(inRadians(sprite.rotate)); // поворачиаем все что дальше будет отрисовано
+        }
+
+        // рисуем картинку
+        this.canvasContext.drawImage(sprite.picture, sprite.coordinates.x, 
+                                    sprite.coordinates.y, sprite.width, sprite.height)
+
+         // сбрасываем настройки канваса после всех манипуляций (например, кручения)
+        this.canvasContext.restore();
+    }
+}
+
+
+/** обертка спрайта для отрисовки. Нужен чтобы менять поля с учетом, например камеры, не боясь испортить сам спрайт */
+class SpriteWrapper{
+
+    // Публичные поля
+    /** id оригинально спрайта. Поддержана иммутабельность приходящего значения (здесь записывается новый класс) */
+    public get spriteId(): Guid{return this._spriteId};
+    /** координаты спрайта для канваса. */
+    public coordinates: X_Y;
+    /** готовая картинка */
+    public picture: CanvasImageSource;
+    /** ширина отрисовываемой картинки в px*/
+    public width: number;
+    /** высота отрисовываемой картинки в px*/
+    public height: number;
+    /** градус на сколько повернуть изображение */
+    public rotate: number;
+
+    // Приватные поля
+    private _spriteId: Guid;
+
+    // Setter-ы свойств
+    public set spriteId (spriteId: Guid){
+        this._spriteId = Guid.parse(spriteId.toString());
+    }
+}
+
+
+/** градусы в радианы */
+function inRadians(degree: number) : number {
+    return degree * Math.PI / 180;
 }

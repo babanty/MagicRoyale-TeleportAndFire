@@ -19,7 +19,7 @@ export abstract class Sprite{
     public get image(): HTMLImageElement{return this._image};
 
     // Необязательные поля
-    /** координаты объекта в канвасе */
+    /** координаты объекта */
     public coordinates: X_Y;
     /** слой на котором производится отрисовка */ 
     public layer: number;
@@ -39,6 +39,10 @@ export abstract class Sprite{
     public tag: string;
     /** здесь функции что исполняются каждый такт. (!) Принимают на вход спрайт, дествие которого исполяется, то есть этого (this.) */
     public functionsInGameLoop: ActInGameLoop[];
+    /** смещение (отклонение) реальной картинки от маски. То есть обработка нажатий на маску и реально отрисовываемая 
+     *  картинка могут быть в разных местах.
+     *  Это костыль на случай, если лень нормально вырезать в пеинте картинку, чтобы она правильно ложилась на маску */
+    public offsetPic: X_Y;
     /** что делать объекту, если на него кликнули */
     public eventMouseClick: ((event: MouseEvent | TouchEvent) => any);
     /** событие, на спрайт навели мышь */
@@ -72,7 +76,7 @@ export abstract class Sprite{
             this.height = this.image.height * scale;
         }
 
-        let lol = setInterval(function () {}, 500);
+        this._scale = scale;
     }
 
     /** вставить\заменить картинку спрайту 
@@ -104,7 +108,7 @@ export interface ActInGameLoop {
 }
 
 
-/** вектор перемещения. Если он задается, то каждый так спрайт изменяет свою координату */
+/** вектор перемещения. Если он задается, то каждый такт спрайт изменяет свою координату */
 export class Vector{
     /** актуален ли вектор, двигается ли объект */
     isGo: boolean;
