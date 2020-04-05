@@ -157,7 +157,9 @@ export class PictureConfig{
     public figure: MaskFigure = MaskFigure.rectangle;
 }
 
-/** [private - не использовать за пределами SpriteHolder-а] загруженная картинка*/
+/** [private - не использовать за пределами SpriteHolder-а] загруженная картинка
+ * @private
+*/
 class InternalPicture{
     public image: HTMLImageElement;
     /** масштаб, где 1 - это 1 к одному */
