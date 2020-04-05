@@ -111,7 +111,17 @@ export class Render{
      * 1. согласно слою;
      * 2. "сверху-вниз" по нижней y-кооридинате спрайта; */
     protected sortSritesForRender(sprites: SpriteWrapper[]) : SpriteWrapper[] {
-
+        sprites.sort((a, b) => { // используем встроенную в массивы ф-ию сортировки https://habr.com/ru/post/279867/
+            if (a.layer == b.layer) { // если у спрайтов одинаковые слои
+                // сортировка по возростанию координаты
+                return (a.coordinates.y + a.height) - (b.coordinates.y + b.height);
+            } else { // если у спрайтов разные слои
+                // сортировка по возростанию слоя
+                return a.layer - b.layer;
+            }
+        });
+    
+        return sprites;
     }
 
 
@@ -121,7 +131,7 @@ export class Render{
         return sprites.filter(sprite => sprite.isHidden !== true)
     }
 
-    
+
     /** получаем готовые к отрисовке переработанные "обертки спрайта"
      * 1. координаты изменены, с учетом камеры
      * 2. если спрайт - анимация, то тут уже нужных срез картинки 
@@ -170,6 +180,8 @@ class SpriteWrapper{
     public height: number;
     /** градус на сколько повернуть изображение */
     public rotate: number;
+    /** слой спрайта, кто выше всех (самое большое число), тот и будет видным */
+    public layer: number
 
     // Приватные поля
     private _spriteId: Guid;
