@@ -51,6 +51,25 @@ export function isTouchDevice() : boolean {
 }
 
 
+/** сделать на весь экран (полноэкранный режим). Сделано не на ts т.к. на ts это жесть хрень не читаемая.
+ *  Чтобы сделать всю страницу на весь экран надо пихнуть тег body
+ * @param htmlElement - html-элемент, который надо развернуть на весь экран
+*/
+export function onFullScreen(htmlElement) {
+    // 
+    if (htmlElement.requestFullScreen) {
+        htmlElement.requestFullScreen();
+    } else if (htmlElement.mozRequestFullScreen) {
+        htmlElement.mozRequestFullScreen();
+    } else if (htmlElement.webkitRequestFullScreen) {
+        htmlElement.webkitRequestFullScreen();
+    } else if (htmlElement.webkitRequestFullScreen) {
+        htmlElement.msrequestFullscreen();
+    }
+}
+
+
+
 // Куки
 /** Вставить куки. Пример: set_cookie("username", "Вася Пупкин");
  * @param name - название ключа (имя куки)

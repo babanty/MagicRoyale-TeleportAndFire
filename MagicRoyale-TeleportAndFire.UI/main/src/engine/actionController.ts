@@ -1,12 +1,60 @@
-/** класс отвечающий за все действия происходящие в игре */
+/** класс отвечающий за все действия выполнящиеся движком */
 export class actionController{
 
-
-    /** Конструктор класса - отвечающего за все действия происходящие в игре
-     * @constructor
+    /** поставить на паузу движок, где true - на паузе. Внимание, это не игровая пауза, движок, отрисовка и проч.
+     *  полностью остановятся.
      */
-    constructor() {
+    public isEnginePause: boolean;
+
+
+    // Приватные поля
+    /** Главная ф-ия движка в которая повтораяется каждый шаг зациклено раз в n-мс (обычно 60 раз в секунду) */
+    private oneEngineStep: OneEngineStep;
+
+    /** Конструктор класса - отвечающего за все действия выполнящиеся движком
+     * @constructor
+     * @param oneEngineStep - Главная ф-ия движка в которая повтораяется каждый шаг зациклено раз в n-мс (обычно 60 раз в секунду)
+     */
+    constructor(oneEngineStep: OneEngineStep) {
+        this.isEnginePause = false;
+        this.oneEngineStep = oneEngineStep;
+
+        this.engineActionsInitialization(); // заводим движок
     }
+
+    /** инициализация шагов движка. То есть тут мы заводим заводим движок как машину. На вечный цикл 60 раз\сек */
+    private engineActionsInitialization() : void{
+        this.recursionEngineStep(); // вызываем первый шаг, который потом рекурсивно сам себя вызывает
+    }
+
+    /** один шаг движка, который 60 раз в секунду вызывает сам себя */
+    private recursionEngineStep(){
+        if(!this.isEnginePause){ // если не на паузе
+            this.oneEngineStep(); // вызов главной ф-ии движка, которая все заставляет работать.
+        }
+
+        this.animationFrame(this.recursionEngineStep); // делаем рекурсию - вызываем самого себя, только через 
+                                                       // метод-прослойку, чтобы не словить переполнение стека
+    }
+
+    /** специальная оптимизированная ф-ия по отрисовке кадров в браузерах */
+    private animationFrame(oneEngineStep: OneEngineStep) : void{
+        // если реализован этот метод для отрисовки
+        if(requestAnimationFrame){
+            requestAnimationFrame(oneEngineStep);
+            return;
+        }
+
+        // если реализован этот метод для отрисовки
+        if(webkitRequestAnimationFrame){
+            webkitRequestAnimationFrame(oneEngineStep);
+            return;
+        }
+
+        // если ни каких оптимизированных методов не найдено, то просто вызываем ф-ю шага сами
+        setTimeout(oneEngineStep, 1000 / 60);
+    }
+
 
     // Каждыйе n-мс выполнять цикл, отдельно от отрисовки
     //   - выполнить действие на каждый ша
@@ -17,4 +65,10 @@ export class actionController{
     // Обработка событий векторов
     // Обработка событий горячих клавиш
     // Сопоставление "игровых событий" с их обработчиками. Типо шина событий и подписанты на очереди
+}
+
+
+/** Ф-ия движка в которая повтораяется каждый шаг зациклено раз в n-мс (обычно 60 раз в секунду) */
+export interface OneEngineStep {
+    (): void;
 }
