@@ -1,12 +1,3 @@
-// - Рендеринг:
-//   -- [может быть] делать возможным смещение при отрисовке 
-//   -- пропускать клик по объекту.  Может отрисовываться выше всех по слою, но при нажатии пропускает клик и отдаем ему того кто ниже
-//   -- [может быть] возможность рисовать фигуры
-//   -- [может быть] писать текст поверх картинки спрайта
-//   -- [v1] назначать фон (отличается тем, что не является спрайтом)
-//      -- замостить некий фот
-//      -- [может быть] получить массив координат блоков фона и отрисовывать их
-
 import { Sprite, MaskFigure } from "./sprite";
 import { Camera } from "./camera";
 import { Guid } from "guid-typescript";
@@ -90,17 +81,41 @@ export class Render{
     }
 
 
-    /** отрисовать статические картинки, например фон */
-    public renderStaticPicture(picture: HTMLImageElement, x: number, y: number){
-        alert("RenderStaticPucture - Не сделано :(");
-        throw new Error("RenderStaticPucture - Не сделано :(");
+    /** отрисовать статические картинки, например фон.
+     * @param picture - собственно картинка, которую нужно отрисовать. Важно, она тут 
+     *                  не кешируется (в отличие от картинок спрайтов)
+     * @param x - x - координата, где рисовать
+     * @param y - y - координата, где рисовать
+     * @param width - (необзятельно) - какой ширины нарисовать картинку. Если не указано, то берется ширина оригинальной картинки
+     * @param height - (необзятельно) - какой высоты нарисовать картинку. Если не указано, то берется ширина оригинальной картинки
+    */
+    public renderStaticPicture(picture: HTMLImageElement, x: number, y: number, 
+                                    width: number = null, height: number = null){
+        this.canvasContext.drawImage(picture, x, y, 
+                                    width ? width : picture.width, 
+                                    height ? height : picture.height)
     }
 
 
     /** Замостить фон некоторой картинкой (желательно безшовной) */
-    public backgroundRepeat(){
-        alert("BackgroundRepeat - Не сделано :(");
-        throw new Error("BackgroundRepeat - Не сделано :(");        
+    public backgroundRepeat(picture: HTMLImageElement){
+
+        let backgroungWidth = picture.width * scaleMap; // изменяем ширину картинки с поправкой на масштаб
+        let backgrounHeight = picture.height * scaleMap; // изменяем ширину картинки с поправкой на масштаб
+        let numWidth = Math.ceil(this.canvasElement.width / backgroungWidth); // сколько картинок раскидать в ширь
+        let numHeight = Math.ceil(this.canvasElement.height / backgrounHeight); // сколько картинок раскидать в высоту
+
+        for (let i = -1; i <= numWidth; i++) { // замостим по ширине
+            for (let ii = -1; ii <= numHeight; ii++) { // замостим по высоте
+                let x = Math.ceil(camera.x / backgroungWidth);
+                let y = Math.ceil(camera.y / backgrounHeight);
+                this.canvasContext.drawImage(picture,
+                    -x * backgroungWidth + backgroungWidth * i + camera.x - magicNum, // x
+                    -y * backgrounHeight + backgrounHeight * ii + camera.y - magicNum, // y
+                    backgroungWidth, // ширина
+                    backgrounHeight);  // высота
+            }
+        }  
     }
 
 
