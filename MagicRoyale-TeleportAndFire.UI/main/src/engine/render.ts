@@ -99,19 +99,18 @@ export class Render{
 
     /** Замостить фон некоторой картинкой (желательно безшовной) */
     public backgroundRepeat(picture: HTMLImageElement){
-
-        let backgroungWidth = picture.width * scaleMap; // изменяем ширину картинки с поправкой на масштаб
-        let backgrounHeight = picture.height * scaleMap; // изменяем ширину картинки с поправкой на масштаб
+        let backgroungWidth = picture.width * this._camera.scaleMap; // изменяем ширину картинки с поправкой на масштаб
+        let backgrounHeight = picture.height * this._camera.scaleMap; // изменяем ширину картинки с поправкой на масштаб
         let numWidth = Math.ceil(this.canvasElement.width / backgroungWidth); // сколько картинок раскидать в ширь
         let numHeight = Math.ceil(this.canvasElement.height / backgrounHeight); // сколько картинок раскидать в высоту
 
         for (let i = -1; i <= numWidth; i++) { // замостим по ширине
             for (let ii = -1; ii <= numHeight; ii++) { // замостим по высоте
-                let x = Math.ceil(camera.x / backgroungWidth);
-                let y = Math.ceil(camera.y / backgrounHeight);
+                let x = Math.ceil(this._camera.coordinates.x / backgroungWidth);
+                let y = Math.ceil(this._camera.coordinates.y / backgrounHeight);
                 this.canvasContext.drawImage(picture,
-                    -x * backgroungWidth + backgroungWidth * i + camera.x - magicNum, // x
-                    -y * backgrounHeight + backgrounHeight * ii + camera.y - magicNum, // y
+                    -x * backgroungWidth + backgroungWidth * i + this._camera.coordinates.x, // x
+                    -y * backgrounHeight + backgrounHeight * ii +this._camera.coordinates.y, // y
                     backgroungWidth, // ширина
                     backgrounHeight);  // высота
             }

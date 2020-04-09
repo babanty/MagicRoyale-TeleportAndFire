@@ -28,22 +28,22 @@ export class SpriteHolder{
 
         if(pictureConfig){
             for(let i of pictureConfig){
-                this.DownloadAndCachePictureAsync(i);
+                this.downloadAndCachePictureAsync(i);
             }
         }
     }
 
 
     /** создать спрайт на карте, у которого еще не загружена картинка с загрузкой картинки. Если не удалось загрузить картинку - вернет null*/
-    public CreateSprite(sprite: Sprite, config: PictureConfig) : Sprite{
+    public createSprite(sprite: Sprite, config: PictureConfig) : Sprite{
         // валидаия аргументов
         if(!sprite || !config) return null;
 
         // выкачиваем картинку с сервера
-        let image = this.GetPicture(config.srcPath) // пробуем выкачать их кеша
+        let image = this.getPicture(config.srcPath) // пробуем выкачать их кеша
 
         if(!image){ // в кеше картинки не оказалось
-            image = this.DownloadAndCachePicture(config, 10000); // загружаем картинку с нуля
+            image = this.downloadAndCachePicture(config, 10000); // загружаем картинку с нуля
             if(image == null) return null; // не удалось загрузить в течении отведенного времени
         }
         
@@ -58,13 +58,13 @@ export class SpriteHolder{
 
 
     /** [!!!] добавить спрайт с уже заранее загруженной в ручную картинкой */
-    public AddSprite(sprite: Sprite){
+    public addSprite(sprite: Sprite){
         this._sprites.add(sprite);
     }
 
 
     /** удалить спрайт из мира по его Id */
-    public DeleteSpriteById(id: Guid){
+    public deleteSpriteById(id: Guid){
         let deleteSprites = this.sprites.toArray().filter((i) => i.id === id);
         if(deleteSprites && deleteSprites.length > 0)
         {
@@ -77,10 +77,10 @@ export class SpriteHolder{
      * Если нужно заново загрузить картинку с сервера (например, обновить) просто вызовите этот метод повторно
      * @param timeout - время ожидания в мс, до момента, когда выполнение окончится и вернется null
      */
-    public async DownloadAndCachePictureAsync(config: PictureConfig, timeout: number = 15000) : Promise<HTMLImageElement>{
+    public async downloadAndCachePictureAsync(config: PictureConfig, timeout: number = 15000) : Promise<HTMLImageElement>{
 
         let isLoad = false; // загружена ли уже картинка
-        let image = this.InternalDownloadPictureAsync(config.srcPath, () => isLoad = true);
+        let image = this.internalDownloadPictureAsync(config.srcPath, () => isLoad = true);
 
         // ждем загрузки объекта, создаем задачу
         let i = 0;
@@ -105,8 +105,8 @@ export class SpriteHolder{
      * Если нужно заново загрузить картинку с сервера (например, обновить) просто вызовите этот метод повторно
      * @param timeout - время ожидания в мс, до момента, когда выполнение окончится и вернется null
      */
-    public DownloadAndCachePicture(config: PictureConfig, timeout: number = 15000) : HTMLImageElement{
-        let task = new Promise((result) => this.DownloadAndCachePictureAsync(config, timeout));
+    public downloadAndCachePicture(config: PictureConfig, timeout: number = 15000) : HTMLImageElement{
+        let task = new Promise((result) => this.downloadAndCachePictureAsync(config, timeout));
         task.then(result => {return result});
         
         return null;
@@ -117,7 +117,7 @@ export class SpriteHolder{
      * этот метод, однако, когда ф-ия возвращает HTMLImageElement картинка в этот момент еще не загружена. 
      * ЧТобы узнать когда она загурзится надо положить в метод переменную HTMLImageElement.onload ф-ию, которая вызовется по факту завершения
       */
-    protected InternalDownloadPictureAsync(srcPath: string, onloadFunc?
+    protected internalDownloadPictureAsync(srcPath: string, onloadFunc?
         : () => void) : HTMLImageElement{
         let image = new Image();
         image.onload = onloadFunc; // указываем ф-ию которая вызовется по факту завершения загрузки
@@ -126,7 +126,7 @@ export class SpriteHolder{
     }
 
     /** отдает картинку, если она уже ранее загружалась этим холдером. Если ее нет, то вернет null. Чтобы загрузить картинку используйте DownloadPicture */
-    public GetPicture(srcPath: string) : HTMLImageElement{
+    public getPicture(srcPath: string) : HTMLImageElement{
         let picture = this._pictures.getValue(srcPath);
         if(picture){
             return picture.image;
@@ -140,7 +140,7 @@ export class SpriteHolder{
      * @param layer - слой на котором смотреть. Если null, то вернет спрайт, который выше всех
      * @param isIgnoreStaticSprites - игрорировать ли спрайты, у который опция isStatic = true (то есть те, что "прибиты" к экрану, по кнопок)
      */
-    public WhoOnThisPlaceByMaxLayer(coordinates: X_Y, isIgnoreStaticSprites: boolean = false, layer: number = null){
+    public whoOnThisPlaceByMaxLayer(coordinates: X_Y, isIgnoreStaticSprites: boolean = false, layer: number = null){
         alert("WhoOnThisPlaceMaxLayer - Не сделано :(");
         throw new Error("WhoOnThisPlaceMaxLayer - Не сделано :(");
     }
