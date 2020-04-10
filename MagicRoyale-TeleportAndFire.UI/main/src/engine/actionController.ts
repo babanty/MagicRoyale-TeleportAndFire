@@ -9,15 +9,20 @@ export class ActionController{
 
     // Приватные поля
     private _loopWorker: LoopWorker;
-    private engine: Engine;
 
     /** Конструктор класса - отвечающего за все действия выполнящиеся движком
      * @constructor
+     * @param engine - доступ к главному центральному части движка
      */
-    constructor() {
+    constructor(private engine: Engine) {
+
+        // TODO [delete]
+        this.actionsAtEveryStep.push(this.eventsHandlersInitilization);
+
         // создаем класс, который вызывает главный шаг 60 раз в сек
         this._loopWorker = new LoopWorker(this.mainStep);
         this.eventsHandlersInitilization();
+
     }
 
     /** пользовательские функции (действия) выполняющиеся в начале каждого шага (итерации) движка (60 раз в сек) 

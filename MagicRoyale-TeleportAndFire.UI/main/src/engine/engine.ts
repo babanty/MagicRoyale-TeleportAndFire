@@ -16,7 +16,7 @@ export class Engine{
     * @constructor
     */
     constructor() {
-        this._actionController = new ActionController();
+        this._actionController = new ActionController(this);
     }
 
 

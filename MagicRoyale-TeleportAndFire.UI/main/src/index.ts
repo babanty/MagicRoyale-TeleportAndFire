@@ -1,7 +1,7 @@
 // import Post from './Post' // заимпортить класс
 import './styles.css' 
 import './testBabel.ts'
-import Canvas from './engine/canvas'
+import { Canvas } from './engine/canvas'
 import { Engine } from "./engine/engine";
 
 let canvas: Canvas;

@@ -1,5 +1,5 @@
 ﻿/** Класс, отвечающий за canvas (html5) внутри которого все отрисовывается */
-export default class Canvas {
+export class Canvas {
 
     /** canvas - html5-элемент внутри которого все отрисовывается */
     public canvasElement: HTMLCanvasElement;

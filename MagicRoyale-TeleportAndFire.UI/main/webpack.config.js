@@ -32,6 +32,9 @@ module.exports = {
         ]),
         new CleanWebpackPlugin() // этот плагин, очищает выходную папку прежде чем в нее собрать новый билд
     ],
+    resolve: {
+        extensions: ['.ts', '.js', '.css']
+    },
     module: { // подключаем модули-loader-ы, которые могут заимпортить в js, например css-стили
         rules: [
             {
