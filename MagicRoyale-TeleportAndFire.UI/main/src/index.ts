@@ -1,16 +1,17 @@
 // import Post from './Post' // заимпортить класс
 import './styles.css' 
 import './testBabel.ts'
-import { Canvas } from './engine/canvas'
 import { Engine } from "./engine/engine";
-
-let canvas: Canvas;
 
 function initialize() {
     let gameCanvasParrentElement = document.getElementById('gameContent');
-    canvas = new Canvas(gameCanvasParrentElement); // TODO убрать это в движок
+    let engine = new Engine(gameCanvasParrentElement);
 
-    let engine = new Engine();
+    createSprites(engine);
+}
+
+function createSprites(engine: Engine){
+
 }
 
 
