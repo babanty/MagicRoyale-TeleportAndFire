@@ -2,7 +2,7 @@ import { Guid } from "guid-typescript";
 import { X_Y } from "./common";
 
 /** Любой объект на игровой карте */
-export abstract class Sprite{
+export class Sprite{
 
     // Обязательные поля
     /** id. Желательно должен соотвествовать тому, что лежит на сервере */
@@ -17,26 +17,27 @@ export abstract class Sprite{
     public get pathPic(): string{return this._pathPic};
     /** Картинка спрайта.*/
     public get image(): HTMLImageElement{return this._image};
+    /** слой на котором производится отрисовка. Чем больше тут число, тем выше будет отрисован спрайт. Кто выше всех - тот и виден.
+     * всегда определен (не равен null, undef.. etc, по умолчанию 0) */ 
+    public get layer(): number{return this._layer};
 
     // Необязательные поля
     /** координаты объекта */
     public coordinates: X_Y;
-    /** слой на котором производится отрисовка. Чем больше тут число, тем выше будет отрисован спрайт. Кто выше всех - тот и виден */ 
-    public layer: number;
     /** градус на сколько повернуть изображение */ 
-    public rotate: number;
+    public rotate: number = 0;
     /** статичные ли у него координаты? Нужно для взаимодействия с камерой. Если статичные, то на изменение масштаба и перемещения камеры реагировать не будет */
-    public isStaticCoordinates: boolean;
+    public isStaticCoordinates: boolean = false;
     /** скрыт ли элемент. Если скрыт, то не отрисовывется и не регистируются клики */
-    public isHidden: boolean;
+    public isHidden: boolean = false;
     /** пропускать ли нажатие. Может отрисовываться выше всех по слою, но при нажатии пропускает клик и отдаем ему того кто ниже */
-    public isSkipClick: boolean;
-    /** геометрическая фигура, нужна для обработки событий мыши */
-    public figure: MaskFigure;
+    public isSkipClick: boolean = false;
+    /** геометрическая фигура, нужна для обработки событий мыши. По умолчанию прямоугольник */
+    public figure: MaskFigure = MaskFigure.rectangle;
     /** вектор перемещения. Если он задается, то каждый так спрайт изменяет свою координату */
     public vector: Vector;
-    /** просто сюда можно добавить какой-то текст по необходимости */
-    public tag: string;
+    /** просто сюда можно добавить какой-то текст\объект и т.д. по необходимости для личных нужд. На работу движка это поле не влияет */
+    public tag: any;
     /** здесь функции что исполняются каждый такт. (!) Принимают на вход спрайт, дествие которого исполяется, то есть этого (this.) */
     public functionsInGameLoop: ActInGameLoop[];
     /** смещение (отклонение) реальной картинки от маски. То есть обработка нажатий на маску и реально отрисовываемая 
@@ -57,13 +58,15 @@ export abstract class Sprite{
     protected _pathPic: string;
     /** картинка спрайта, отрисовывающася на canvas */
     protected _image: HTMLImageElement;
+    /** слой на котором производится отрисовка. Чем больше тут число, тем выше будет отрисован спрайт. Кто выше всех - тот и виден */ 
+    protected _layer: number;
 
     /** Конструктор класса игрового объекта на карте
      * @constructor
      * @param id - id. Желательно должен соотвествовать тому, что лежит на сервере
      * @param layer -слой на котором производится отрисовка
      */
-    public constructor(id: Guid, layer: number) {
+    public constructor(id: Guid, layer: number = 0) {
         this.id = id;
         this.layer = layer;
     }
@@ -77,6 +80,15 @@ export abstract class Sprite{
         }
 
         this._scale = scale;
+    }
+
+    public set layer(layer: number){
+        if(!layer){ // если передали null, undef.. etc
+            layer = 0;
+            return;
+        }
+
+        this._layer = layer;
     }
 
     /** вставить\заменить картинку спрайту 

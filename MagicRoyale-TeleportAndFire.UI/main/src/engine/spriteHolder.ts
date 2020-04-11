@@ -3,41 +3,39 @@ import Collections = require('typescript-collections');
 import {sleep, X_Y} from "./common";
 import { Guid } from "guid-typescript";
 import * as geometry from "./geometry";
+import { Engine } from "./engine";
 
 /** "держатель" игровых объектов. Держит в себе всю карту */
 export class SpriteHolder{
     // Публичные поля
     
-    /** все игровые объекты на карте */
+    /** все игровые объекты на карте. Для добавления и удаления объектов используйте createSprite\deleteSpriteById, а не эту коллекцию */
     public get sprites(): Collections.LinkedList<Sprite> {return this._sprites};
 
 
     // Приватные поля
     protected _sprites: Collections.LinkedList<Sprite>;
     protected _pictures: Collections.Dictionary<string, InternalPicture>;
+    protected _engine: Engine;
 
 
     /** Конструктор класса - "держатель" игровых объектов. Держит в себе всю карту
      * @constructor
-     * @param id - id. Желательно должен соотвествовать тому, что лежит на сервере
+     * @param pictureConfig - id. Желательно должен соотвествовать тому, что лежит на сервере
      * @param layer -слой на котором производится отрисовка
      */
-    public constructor(pictureConfig: PictureConfig[] = null) {
+    public constructor(engine: Engine) {
         this._sprites = new Collections.LinkedList<Sprite>();
-        this._pictures = new Collections.Dictionary<string, InternalPicture>()
-
-        if(pictureConfig){
-            for(let i of pictureConfig){
-                this.downloadAndCachePictureAsync(i);
-            }
-        }
+        this._pictures = new Collections.Dictionary<string, InternalPicture>();
     }
 
 
     /** создать спрайт на карте, у которого еще не загружена картинка с загрузкой картинки. Если не удалось загрузить картинку - вернет null*/
-    public createSprite(sprite: Sprite, config: PictureConfig) : Sprite{
+    public createSprite(id: Guid, config: PictureConfig) : Sprite{
         // валидаия аргументов
-        if(!sprite || !config) return null;
+        if(!id || !config) return null;
+
+        let sprite = new Sprite(id);
 
         // выкачиваем картинку с сервера
         let image = this.getPicture(config.srcPath) // пробуем выкачать их кеша
@@ -54,6 +52,9 @@ export class SpriteHolder{
         this.sprites.add(sprite);
 
         return sprite;
+
+        // TODO докинуть ф-ию createSprite<наследник>
+        // TODO поменять addSprite, добавив config: PictureConfig? то есть не обязательный. если есть он загрузит, если нет - добавит как есть
     }
 
 
@@ -136,13 +137,100 @@ export class SpriteHolder{
     }
 
 
-    /** какой спрайт находится в указанных координатах
-     * @param layer - слой на котором смотреть. Если null, то вернет спрайт, который выше всех
-     * @param isIgnoreStaticSprites - игрорировать ли спрайты, у который опция isStatic = true (то есть те, что "прибиты" к экрану, по кнопок)
+    /** какие спрайты находится в указанных координатах
+     * @param getFromMaxLayer - получить спрайты с самого "высокого" уровня (те, что выше всех)
+     * @param isIgnoreStaticSprites - игнорировать ли спрайты, у который опция isStatic = true (то есть те, что "прибиты" к экрану, 
+     * типо кнопок, если isIgnoreStaticSprites = true, то возвращены из ф-ии не будут)
+     * @param layer - слой на котором смотреть. Если null, то вернет все спрайты на указанном месте. Если getFromMaxLayer = true, 
+     * то значение аргумента layer проигнорируется
      */
-    public whoOnThisPlaceByMaxLayer(coordinates: X_Y, isIgnoreStaticSprites: boolean = false, layer: number = null){
-        alert("WhoOnThisPlaceMaxLayer - Не сделано :(");
-        throw new Error("WhoOnThisPlaceMaxLayer - Не сделано :(");
+    public whoOnThisPlace(coordinates: X_Y, getFromMaxLayer: boolean = true, 
+                    isIgnoreStaticSprites: boolean = false, layer: number = null) : Sprite[] {
+        // преобразовываем координаты нажатия мыши:
+        let preparedCoordinates = this._engine.render.absoluteCoordinatesToGameCoordinates(coordinates);
+
+        // создаем массив совпадений
+        let suitableSprites = new Collections.LinkedList<Sprite>();
+
+        // проходимся по всем спрайтам, чтобы выяснить кто располагается в казанных координатах независимо от слоя
+        this.sprites.forEach(sprite => {
+
+            // валидация спрайта
+            if(sprite.isHidden || sprite.isSkipClick){ // игнорируем скрытых и тех, кто должен пропускать клик
+                return;
+            }
+
+            if(isIgnoreStaticSprites && sprite.isStaticCoordinates){ // если указали игнорирровать статические спрайты
+                return;
+            }
+
+            // пересчитываем координаты спрайтов на физические координаты как они отрисовываются
+            let usePointCoordinates = sprite.isStaticCoordinates ? coordinates : preparedCoordinates; // берем те координаты, которые используются при расчетах для этого конркетного спрайта
+                    // TODO - возможно, то что ниже не правильно и вообще не надо делать
+            let useWidth = sprite.isStaticCoordinates ? sprite.width : this._engine.render.getRealCutLength(sprite.width); // рассчитываем правильную ширину спрайта 
+            let useHeight = sprite.isStaticCoordinates ? sprite.height : this._engine.render.getRealCutLength(sprite.height); // рассчитываем правильную ширину спрайта 
+
+            // сперва отсеиваем всех у кого не совпадает прямоугольная область т.к. это дешевая операция
+            if(!geometry.IsBelongingPointToRectangle(usePointCoordinates, sprite.coordinates, useWidth, useHeight)){
+                return;
+            }
+
+            // затем проверяем на совпадение с учетом фигуры и вычитаем из массива совпадений тех, кто не подходит
+            if(sprite.figure === MaskFigure.circle){ // если у спрайта фигура - круг, то смотрим входи ли точка в круг
+                if(!geometry.IsBelongingPointToCirle(usePointCoordinates, 
+                                                    new X_Y(sprite.coordinates.x + sprite.width / 2, sprite.coordinates.y + sprite.height / 2), // считаем центр круга
+                                                    sprite.width / 2)){ // считаем радиус
+                    return;
+                }
+            }
+
+            suitableSprites.add(sprite);
+        });
+
+
+
+        // Cелектим соглавно настройки слоя
+        if(!getFromMaxLayer && layer === null){ // если отдать все
+            return suitableSprites.toArray();
+        }
+
+        // если указали, что отдать спрайты с самого высокого слоя
+        if(getFromMaxLayer){
+            return this.GetSpritesFromLayer(suitableSprites).toArray();
+        }
+
+        return this.GetSpritesFromLayer(suitableSprites, layer).toArray();
+    }
+
+
+    /** отдать спрайты с указанного слоя или с самого высокого слоя. Всегда возвращает коллекцию, даже пустую
+     * @param layer - номер слоя с которого отдать спрайты. Если null, то сам вычислит самый высокий и отдаст с него
+    */
+    protected GetSpritesFromLayer(sprites: Collections.LinkedList<Sprite>, layer: number = null) : Collections.LinkedList<Sprite>{
+        let result = new Collections.LinkedList<Sprite>();
+
+        if(!sprites || sprites.isEmpty){ // если ни чего не передали
+            return result;
+        }
+
+        if(layer === null){ // если указали забрать с самого высокого слоя, то вычисляем его
+            layer = sprites.first().layer; // задаем любой начальный номер слоя
+
+            sprites.forEach(sprite => { // перебираем все спрайты
+                if(sprite.layer > layer){ // если у кого-то слой выше чем текущий выбранный
+                    layer = sprite.layer; // то заменяем выбранный
+                }
+            });
+        }
+
+        // выбираем спрайты с нужного слоя
+        sprites.forEach(sprite => {
+            if(sprite.layer === layer){
+                result.add(sprite);
+            }
+        });
+
+        return result;
     }
 }
 

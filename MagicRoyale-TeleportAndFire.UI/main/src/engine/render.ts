@@ -118,6 +118,31 @@ export class Render{
     }
 
 
+    /** пересчитать абсолютные координаты в игровые координаты. 0, 0 абсолютных координат = левому верхнему углу канваса
+     * - учитывается камера
+     * - учитывается масштаб
+     */
+    public absoluteCoordinatesToGameCoordinates(absoluteCoordinates: X_Y) : X_Y {
+        // спервая учитываем камеру
+        let result = new X_Y(absoluteCoordinates.x + this.camera.coordinates.x, 
+                            absoluteCoordinates.y + this.camera.coordinates.y);
+
+        // учитываем масштаю
+        result.x = result.x * this.camera.scaleMap;
+        result.y = result.y * this.camera.scaleMap;
+
+        return result;
+    }
+
+    /** пересчитать длину отрезка (например ширину спрайта) на ту реальную длину в пикселях, которую будет отрисовывать рендериг
+     * - учитывает масштаб карты
+     * @param length - длина рассчитываемого отрезка
+    */
+    public getRealCutLength(length: number): number{
+        return length * this.camera.scaleMap;
+    }
+
+
     /** очищаем холст (делаем полностью белым) */
     protected clearCanvas(){
         this.canvasContext.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height); 
