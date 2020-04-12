@@ -32,14 +32,23 @@ export function IsBelongingPointToCirle(point: X_Y, circleCenter: X_Y, radius: n
 
 
 /** пересекаются ли указанный прямоугольник с указанным кругом */
-export function IntersectionFigures_RectangleAndCirce(){
+export function IntersectionFigures_RectangleAndCirce() : boolean{
+    // TODO
     alert("IntersectionFigures_RectangleAndCirce - Не сделано :(");
     throw new Error("IntersectionFigures_RectangleAndCirce - Не сделано :(");    
 }
 
 
-/** пересекаются ли указанный прямоугольник с другим прямоугольником */
-export function IntersectionFigures_RectangleAndRectangle(){
+/** пересекаются ли указанный прямоугольник с другим прямоугольником. Дешевая (быстрая по скорости) операция проверки */
+export function IntersectionFigures_RectangleAndRectangle() : boolean{
+    // TODO
+    alert("IntersectionFigures_RectangleAndRectangle - Не сделано :(");
+    throw new Error("IntersectionFigures_RectangleAndRectangle - Не сделано :(");    
+}
+
+/** пересекаются ли указанный круг с другим кругом */
+export function IntersectionFigures_CirceAndCirce() : boolean{
+    // TODO
     alert("IntersectionFigures_RectangleAndRectangle - Не сделано :(");
     throw new Error("IntersectionFigures_RectangleAndRectangle - Не сделано :(");    
 }

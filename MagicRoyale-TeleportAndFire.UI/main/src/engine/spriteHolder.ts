@@ -12,7 +12,7 @@ export class SpriteHolder{
     /** все игровые объекты на карте. Для добавления и удаления объектов используйте createSprite\deleteSpriteById, а не эту коллекцию */
     public get sprites(): Collections.LinkedList<Sprite> {return this._sprites};
 
-    // События создания спрайта (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана)
+    /** События создания спрайта (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана.) */ 
     public spriteCreatedEvent: SpriteCreatedEvent[];
 
     // Приватные поля
@@ -63,7 +63,7 @@ export class SpriteHolder{
     /** [!!!] добавить спрайт с уже заранее загруженной в ручную картинкой */
     public addSprite(sprite: Sprite){
         this._sprites.add(sprite);
-        this.spriteCreatedEvent.forEach(subscriber => subscriber(sprite))
+        this.spriteCreatedEvent.forEach(subscriber => {if(subscriber) subscriber(sprite)})
     }
 
 
@@ -206,8 +206,60 @@ export class SpriteHolder{
     }
 
     /** вернуть все спрайты, с которыми пересекается указанный спрайт */
-    public getIntersection(sprite: Sprite) : Sprite[]{
-        // будет вызываться метод тут, который для этого спрайта рассчитает пересечение сперва без учета фигуры. А затем с учетом фигур обоих спрайтов
+    public getAllIntersection(checkedSprite: Sprite) : Sprite[]{
+
+        // создаем массив совпадений
+        let suitableSprites = new Collections.LinkedList<Sprite>(); 
+
+        // сперва проверяем пересечения под прямоугольнику т.к. это дешевая операция
+        this.sprites.forEach(sprite => {
+            if(geometry.IntersectionFigures_RectangleAndRectangle()){
+                suitableSprites.add(sprite);
+            }
+        })
+
+        let result = new Collections.LinkedList<Sprite>(); 
+
+        // теперь полноценно проверяем пересечения согласно указанным фигурам
+        suitableSprites.forEach(sprite =>{ // проходимся по каждому спрайту с которым совпала прямоугольная область
+            let isIntersection = this.isSpritesIntersected(checkedSprite, sprite);
+            if(isIntersection){
+                result.add(sprite);
+            }
+        })
+
+        return result.toArray();
+    }
+
+    /** пересеклись ли эти два конкретных спрайта?
+     * 
+     * Если необходимо узнать с кем вообще пересекается спрайт используйте: getAllIntersection
+     */
+    public isSpritesIntersected(one: Sprite, two: Sprite) : boolean{
+
+            // если оба спрайта - прямоугольники
+            if(one.figure === MaskFigure.rectangle && two.figure === MaskFigure.rectangle){
+                let isIntersection = geometry.IntersectionFigures_RectangleAndRectangle(one, two);
+                return isIntersection;
+            }
+            
+            // если проверяемый-спрайт - круг, а подошедший по прямоугольной области - прямоугольник
+            if(one.figure === MaskFigure.circle && two.figure === MaskFigure.rectangle){
+                let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(two, one);
+                return isIntersection;
+            }
+
+            // если проверяемый-спрайт - прямоугольник, а подошедший по прямоугольной области - круг
+            if(one.figure === MaskFigure.rectangle && two.figure === MaskFigure.circle){
+                let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(one, two);
+                return isIntersection;
+            }
+
+            // если проверяемый-спрайт - круг, и подошедший по прямоугольной области - круг
+            if(one.figure === MaskFigure.circle && two.figure === MaskFigure.circle){
+                let isIntersection = geometry.IntersectionFigures_CirceAndCirce(one, two);
+                return isIntersection;
+            }
     }
 
 

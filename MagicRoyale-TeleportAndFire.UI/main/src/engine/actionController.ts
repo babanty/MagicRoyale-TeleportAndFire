@@ -65,8 +65,12 @@ export class ActionController{
         // - сделать "распределить" клика\2х пальцев вызывая ф-ю клика на спрайт или изменения положения камеры или масштабирования
 
         // TODO [NotImpl] - перенаправлять клики на спрайты
+        // TODO [NotImpl] - перенаправлять наведение мыши на спрайты
         // TODO [NotImpl] - изменения положения камеры
         // TODO [NotImpl] - изменения или масштабирования
+
+        // 1111 - canvasOnMouseMove
+        // 1273 - стандартные обработчики
         
         // Обработка событий пересечения
         this.intersectionEventInitialization();
@@ -116,9 +120,9 @@ export class ActionController{
     private spriteCoordinatesChangedEventHandler(sprite: Sprite){
         // Действия для метода intersectionEventInitialization (см. там зачем)
         // проверка пересечения спрайтов и если спрайт с кем-то пересекается, то генерируется событие intersectionEvent
-        let intersectionSprites = this.engine.spriteHolder.getIntersection(sprite);
+        let intersectionSprites = this.engine.spriteHolder.getAllIntersection(sprite);
         if(intersectionSprites.length > 0){
-            this.intersectionEvent.forEach(subscriber => subscriber(sprite, intersectionSprites));
+            this.intersectionEvent.forEach(subscriber => {if(subscriber) subscriber(sprite, intersectionSprites)});
         }
     }
 }

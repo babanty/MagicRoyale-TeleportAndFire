@@ -20,7 +20,7 @@ export class X_Y{
         this._y = y;
 
         // вызываем отработку события изменения координат
-        this.coorditanesChangedEvent.forEach(subscriber => subscriber(this, oldValues));
+        this.coorditanesChangedEvent.forEach(subscriber => {if(subscriber) subscriber(this, oldValues)});
     }
 
     private _x:number;
