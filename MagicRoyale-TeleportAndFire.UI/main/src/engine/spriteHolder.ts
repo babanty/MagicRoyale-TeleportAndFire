@@ -12,6 +12,8 @@ export class SpriteHolder{
     /** все игровые объекты на карте. Для добавления и удаления объектов используйте createSprite\deleteSpriteById, а не эту коллекцию */
     public get sprites(): Collections.LinkedList<Sprite> {return this._sprites};
 
+    // События создания спрайта (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана)
+    public spriteCreatedEvent: SpriteCreatedEvent[];
 
     // Приватные поля
     protected _sprites: Collections.LinkedList<Sprite>;
@@ -49,7 +51,7 @@ export class SpriteHolder{
         sprite.setImage(image, config.scale, config.figure);
 
         // добавляем спрайт в коллекцию объектов держателю объектов
-        this.sprites.add(sprite);
+        this.addSprite(sprite);
 
         return sprite;
 
@@ -61,6 +63,7 @@ export class SpriteHolder{
     /** [!!!] добавить спрайт с уже заранее загруженной в ручную картинкой */
     public addSprite(sprite: Sprite){
         this._sprites.add(sprite);
+        this.spriteCreatedEvent.forEach(subscriber => subscriber(sprite))
     }
 
 
@@ -202,6 +205,11 @@ export class SpriteHolder{
         return this.GetSpritesFromLayer(suitableSprites, layer).toArray();
     }
 
+    /** вернуть все спрайты, с которыми пересекается указанный спрайт */
+    public getIntersection(sprite: Sprite) : Sprite[]{
+        // будет вызываться метод тут, который для этого спрайта рассчитает пересечение сперва без учета фигуры. А затем с учетом фигур обоих спрайтов
+    }
+
 
     /** отдать спрайты с указанного слоя или с самого высокого слоя. Всегда возвращает коллекцию, даже пустую
      * @param layer - номер слоя с которого отдать спрайты. Если null, то сам вычислит самый высокий и отдаст с него
@@ -254,4 +262,12 @@ class InternalPicture{
     public scale: number = 1;
     /** геометрическая фигура, нужна для обработки событий мыши */
     public figure: MaskFigure = MaskFigure.rectangle;
+}
+
+
+/** событие вызывающеся при создании нового спрайта
+ * @param createdSprite - собственно, тот кто был создан
+*/
+export interface SpriteCreatedEvent {
+    (createdSprite: Sprite): void;
 }

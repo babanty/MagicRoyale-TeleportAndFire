@@ -23,7 +23,7 @@ export class Sprite{
 
     // Необязательные поля
     /** координаты объекта */
-    public coordinates: X_Y;
+    public get coordinates(): X_Y{return this._coordinates}; // TODO пробежаться по коду, посмотреть везде ли стоят проверки на null
     /** градус на сколько повернуть изображение */ 
     public rotate: number = 0;
     /** статичные ли у него координаты? Нужно для взаимодействия с камерой. Если статичные, то на изменение масштаба и перемещения камеры реагировать не будет */
@@ -44,12 +44,16 @@ export class Sprite{
      *  картинка могут быть в разных местах.
      *  Это костыль на случай, если лень нормально вырезать в пеинте картинку, чтобы она правильно ложилась на маску */
     public offsetPic: X_Y;
-    /** что делать объекту, если на него кликнули */
-    public eventMouseClick: ((event: MouseEvent | TouchEvent) => any);
-    /** событие, на спрайт навели мышь */
-    public eventMouseMove: ((event: MouseEvent | TouchEvent) => any);
-    /**  */
+    /** заполнив это поле вы сделаете картинку спрайта анимацией */
     public animation: SpriteAnimation;
+
+    // События
+    /** что делать объекту, если на него кликнули */
+    public mouseClickEvent: ((event: MouseEvent | TouchEvent) => any);
+    /** событие, на спрайт навели мышь */
+    public mouseMoveEvent: ((event: MouseEvent | TouchEvent) => any);
+    /** событие изменения координат спрайта (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана)*/
+    public coordinatesChangedEvent: SpriteCoordinatesChangedEvent[];
 
     // Приватные поля
     /** [изменять через scale] масштаб, где 1 - это 1 к одному */
@@ -60,6 +64,8 @@ export class Sprite{
     protected _image: HTMLImageElement;
     /** слой на котором производится отрисовка. Чем больше тут число, тем выше будет отрисован спрайт. Кто выше всех - тот и виден */ 
     protected _layer: number;
+    /** координаты объекта */
+    protected _coordinates: X_Y;
 
     /** Конструктор класса игрового объекта на карте
      * @constructor
@@ -89,6 +95,18 @@ export class Sprite{
         }
 
         this._layer = layer;
+    }
+
+    public set coordinates(coordinates: X_Y){
+        let oldCoordinates = this.coordinates ? new X_Y(this.coordinates.x, this.coordinates.x) : null;
+        this._coordinates = coordinates; // устанавливаем новые координаты
+        coordinates.coorditanesChangedEvent.push(this.coorditanesChangedEventHandler); // подписываемся на их событие об изменении
+        this.coorditanesChangedEventHandler(this.coordinates, oldCoordinates); // вызваем ф-ю которая должна отрабатывать при изменении координат спрайта
+    }
+    /** ф-ю которая должна отрабатывать при изменении координат как таковых, а не этого спрайта */
+    protected coorditanesChangedEventHandler(newValues: X_Y, oldValues: X_Y){
+        // уведомляем подпсчиков о наступлении события изменении координат спрайта
+        this.coordinatesChangedEvent.forEach(subscriber => subscriber(this, newValues, oldValues));
     }
 
     /** вставить\заменить картинку спрайту 
@@ -135,6 +153,7 @@ export class Vector{
 }
 
 
+/** класс содержащий в себе все необходимой для корректной работы анимации у спрайта */
 export class SpriteAnimation{
     /** количество кадров */
     public frameNum: number;
@@ -211,4 +230,11 @@ export class SpriteAnimation{
         clearInterval(this._counterFrame); // удаляем функцию вызывающую раз внекоторое время смену кадра
         this.frameNumNext = 0;
     }
+}
+
+
+
+/** Событие возникающее при изменении координат спрайта. */
+interface SpriteCoordinatesChangedEvent {
+    (sprite: Sprite, newCoordinates: X_Y, oldCoordinates: X_Y): void;
 }
