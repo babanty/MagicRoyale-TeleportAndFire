@@ -19,7 +19,7 @@ namespace MagicRoyale_TeleportAndFire.App.Controllers
         }
 
         [HttpPost, Consumes("application/json")]
-        public async Task<Character> Create([FromBody] CreateCharacterRequest request)
+        public async Task<Character> Create()
         {
             return await _charactersManager.Create();
         }

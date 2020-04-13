@@ -6,6 +6,7 @@ namespace MagicRoyale_TeleportAndFire.Entity
 {
     public class Character
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
         public Guid WorldId { get; set; } = Guid.NewGuid();
         public decimal X { get; set; }
         public decimal Y { get; set; }
