@@ -1,4 +1,5 @@
 ﻿using System;
+using MagicRoyale_TeleportAndFire.Entity;
 using Microsoft.EntityFrameworkCore;
 
 namespace MagicRoyale_TeleportAndFire.App
@@ -6,6 +7,7 @@ namespace MagicRoyale_TeleportAndFire.App
     public class MagicRoyaleDbContext : DbContext
     {
         public DbSet<User> Users { get; set; }
+        public DbSet<Character> Characters { get; set; }
 
         public MagicRoyaleDbContext(DbContextOptions<MagicRoyaleDbContext> options)
             : base(options)
