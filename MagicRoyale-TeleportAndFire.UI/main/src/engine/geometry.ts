@@ -32,23 +32,68 @@ export function IsBelongingPointToCirle(point: X_Y, circleCenter: X_Y, radius: n
 
 
 /** пересекаются ли указанный прямоугольник с указанным кругом */
-export function IntersectionFigures_RectangleAndCirce() : boolean{
-    // TODO
-    alert("IntersectionFigures_RectangleAndCirce - Не сделано :(");
-    throw new Error("IntersectionFigures_RectangleAndCirce - Не сделано :(");    
+export function IntersectionFigures_RectangleAndCirce(rectangleCenter: X_Y, rectangleWidth: number, 
+                            rectangleHeight: number, circleCenter: X_Y, circleRadius: number) : boolean{
+    
+    // https://codengineering.ru/q/circle-rectangle-collision-detection-intersection-21544/
+
+    let circleDistance = new X_Y(Math.abs(circleCenter.x - rectangleCenter.x), Math.abs(circleCenter.y - rectangleCenter.y));
+
+    if (circleDistance.x > (rectangleWidth/2 + circleRadius)) { return false; }
+    if (circleDistance.y > (rectangleHeight/2 + circleRadius)) { return false; }
+
+    if (circleDistance.x <= (rectangleWidth/2)) { return true; } 
+    if (circleDistance.y <= (rectangleHeight/2)) { return true; }
+
+    let cornerDistance_sq = (circleDistance.x - rectangleWidth/2)^2 + (circleDistance.y - rectangleHeight/2)^2;
+
+    return (cornerDistance_sq <= (circleRadius ** 2));
 }
 
 
-/** пересекаются ли указанный прямоугольник с другим прямоугольником. Дешевая (быстрая по скорости) операция проверки */
-export function IntersectionFigures_RectangleAndRectangle() : boolean{
-    // TODO
-    alert("IntersectionFigures_RectangleAndRectangle - Не сделано :(");
-    throw new Error("IntersectionFigures_RectangleAndRectangle - Не сделано :(");    
+/** пересекаются ли указанный прямоугольник с другим прямоугольником. Дешевая (быстрая по скорости) операция проверки.
+ * 
+ * Перейди к функции, чтобы увидеть что значат ее аргументы.
+ * 
+ * Аргументы, где one и two это прямоугольники:
+ * (a.x,a.y)--------------|
+ *    |                   |
+ *    |                   |
+ *    |                   |
+ *    |---------------(a.x1,a.y1)
+ * (b.x,b.y)---------------------|
+ *    |                          |
+ *    |                          |
+ *    |                          |
+ *    |---------------------(b.x1,b.y1)
+ */
+export function IntersectionFigures_RectangleAndRectangle(oneLeftTop: X_Y, oneRightBottom: X_Y, 
+                                                    twoLeftTop: X_Y, twoRightBottom: X_Y) : boolean{
+                                                        
+    return ( oneLeftTop.y < twoRightBottom.y || oneRightBottom.y > twoLeftTop.y || 
+                oneRightBottom.x < twoLeftTop.x || oneLeftTop.x > twoRightBottom.x )  
 }
 
-/** пересекаются ли указанный круг с другим кругом */
-export function IntersectionFigures_CirceAndCirce() : boolean{
-    // TODO
-    alert("IntersectionFigures_RectangleAndRectangle - Не сделано :(");
-    throw new Error("IntersectionFigures_RectangleAndRectangle - Не сделано :(");    
+/** пересекаются ли указанный круг с другим кругом 
+ * @param oneCenter - координаты центра первого круга
+ * @param oneRadius - радиус первого круга
+ * @param twoCenter - координаты центра первого круга
+ * @param twoRadius - радиус первого круга
+ * 
+*/
+export function IntersectionFigures_CirceAndCirce(oneCenter: X_Y, oneRadius: number, twoCenter: X_Y, twoRadius: number) : boolean{
+    // окружности пересекаются если расстояние между центрами меньше либо равно сумме радиусов
+
+    let distance = distanceBetweenPoints(oneCenter, twoCenter);
+
+    if(distance <= oneRadius + twoRadius) {
+        return true
+    }
+
+    return false;
+}
+
+/** вычислить расстояние между двумя точками на плоскости */
+export function distanceBetweenPoints(onePoint: X_Y, twoPoint: X_Y) : number {
+    return Math.sqrt(((twoPoint.x - onePoint.x) ** 2) + ((twoPoint.y - onePoint.y) ** 2));
 }

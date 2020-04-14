@@ -106,7 +106,7 @@ export class Sprite{
     public set vector(vector: MovingVector){
         this._vector = vector;
         this._vector.endEvent.push(this.endEventHandler); // подписываемся на событие вектора о том что движение по нему окончено
-        this.functionUpdatingCoorditanesEveryStepId = this.functionsInGameLoop.push(this.updatingCoordinates);
+        this.functionUpdatingCoorditanesEveryStepId = this.functionsInGameLoop.push(this.updatingCoordinatesByVector);
     }
     protected endEventHandler(){ 
         // передаем подписчикам, что движение по вектору окончено
