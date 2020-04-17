@@ -1,5 +1,5 @@
 import { Guid } from "guid-typescript";
-import { X_Y } from "./common";
+import { X_Y, EventDistributor, CoordinatesChangedEvent, CoordinatesChangedEventInfo, EventDistributorWithInfo } from "./common";
 
 /** Любой объект на игровой карте */
 export class Sprite{
@@ -52,10 +52,12 @@ export class Sprite{
     public mouseClickEvent: ((event: MouseEvent | TouchEvent) => any);
     /** событие, на спрайт навели мышь */
     public mouseMoveEvent: ((event: MouseEvent | TouchEvent) => any);
-    /** событие изменения координат спрайта (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана)*/
-    public coordinatesChangedEvent: SpriteCoordinatesChangedEvent[];
-    /** событие о достижении конечных координат вектора у спрайта (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана)*/
-    public vectorMovementEndedEvent: VectorMovementEndedEvent[];
+    /** событие изменения координат спрайта */
+    public coordinatesChangedEvent: EventDistributorWithInfo<CoordinatesChangedEvent, CoordinatesChangedEventInfo> 
+                                    = new EventDistributorWithInfo<CoordinatesChangedEvent, CoordinatesChangedEventInfo>();
+    /** событие о достижении конечных координат вектора у спрайта */
+    public vectorMovementEndedEvent: EventDistributorWithInfo<VectorMovementEndedEvent, VectorMovementEndedEventInfo>
+                                    = new EventDistributorWithInfo<VectorMovementEndedEvent, VectorMovementEndedEventInfo>();
 
     // Приватные поля
     /** [изменять через scale] масштаб, где 1 - это 1 к одному */
@@ -105,13 +107,14 @@ export class Sprite{
     // чтобы актуализировались координаты спрайта, а так же подписываемся на достижения финиша в классе вектора движения
     public set vector(vector: MovingVector){
         this._vector = vector;
-        this._vector.endEvent.push(this.endEventHandler); // подписываемся на событие вектора о том что движение по нему окончено
+        this._vector.endEvent.addSubscriber(this.endEventHandler); // подписываемся на событие вектора о том что движение по нему окончено
         this.functionUpdatingCoorditanesEveryStepId = this.functionsInGameLoop.push(this.updatingCoordinatesByVector);
     }
     protected endEventHandler(){ 
         // передаем подписчикам, что движение по вектору окончено
-        this.vectorMovementEndedEvent.forEach(subscriber => {if(subscriber) subscriber(this)});
+        this.vectorMovementEndedEvent.invoke(new VectorMovementEndedEventInfo(this));
         // прекращаем актуализировать текущие координаты согласно вектору
+        // TODO ?
     }
     /** id (key) в массиве functionsInGameLoop с функцией актуализации координат каждый шаг */
     protected functionUpdatingCoorditanesEveryStepId: number;
@@ -120,13 +123,19 @@ export class Sprite{
     public set coordinates(coordinates: X_Y){
         let oldCoordinates = this.coordinates ? new X_Y(this.coordinates.x, this.coordinates.x) : null;
         this._coordinates = coordinates; // устанавливаем новые координаты
-        coordinates.coorditanesChangedEvent.push(this.coorditanesChangedEventHandler); // подписываемся на их событие об изменении
-        this.coorditanesChangedEventHandler(this.coordinates, oldCoordinates); // вызваем ф-ю которая должна отрабатывать при изменении координат спрайта
+        coordinates.coordinatesChangedEvent.addSubscriber(this.coorditanesChangedEventHandler); // подписываемся на их событие об изменении
+        
+        // вызваем ф-ю которая должна отрабатывать при изменении координат спрайта
+        let eventInfo = new CoordinatesChangedEventInfo();
+        eventInfo.newValues = this.coordinates;
+        eventInfo.oldValues = oldCoordinates;
+        this.coorditanesChangedEventHandler(eventInfo); // вызваем ф-ю которая должна отрабатывать при изменении координат спрайта
+
     }
     /** ф-ю которая должна отрабатывать при изменении координат как таковых, а не этого спрайта */
-    protected coorditanesChangedEventHandler(newValues: X_Y, oldValues: X_Y){
+    protected coorditanesChangedEventHandler(eventInfo: CoordinatesChangedEventInfo){
         // уведомляем подпсчиков о наступлении события изменении координат спрайта
-        this.coordinatesChangedEvent.forEach(subscriber => {if(subscriber) subscriber(this, newValues, oldValues)});
+        this.coordinatesChangedEvent.invoke(eventInfo);
     }
 
     /** вставить\заменить картинку спрайту 
@@ -168,6 +177,16 @@ export interface ActInGameLoop {
     (sprite: Sprite): void;
 }
 
+/** событие о достижении конечных координат вектора у спрайта*/
+export interface VectorMovementEndedEvent {
+    (eventInfo: VectorMovementEndedEventInfo): void;
+}
+export class VectorMovementEndedEventInfo{
+    constructor (public sprite: Sprite){
+    }
+}
+
+
 
 /** вектор перемещения. Если он задается, то каждый такт спрайт изменяет свою координату */
 export class MovingVector{
@@ -195,18 +214,20 @@ export class MovingVector{
     /** событие о достижении конечных координат.
      * 
      *  (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана)*/
-    public endEvent: EndEvent[];
+    public endEvent: EventDistributor = new EventDistributor();
 
     // Сеттеры
     public set endCoordinates(endCoordinates: X_Y){
         // отписываемся от подписки на старые координаты
         if(this.subscribeToEndCoordinatesChangedEventId && this._endCoordinates){
-            this._endCoordinates.coorditanesChangedEvent[this.subscribeToEndCoordinatesChangedEventId] = null;
+            this._endCoordinates.coordinatesChangedEvent.deleteSubscriber(this.subscribeToEndCoordinatesChangedEventId);
         }
         // меняем конечные координаты на новые
-        this.endCoordinatesChangedEventHandler(endCoordinates);
+        let eventInfo = new CoordinatesChangedEventInfo();
+        eventInfo.newValues = endCoordinates;
+        this.endCoordinatesChangedEventHandler(eventInfo);
         // подписываемся на событие изменения новых координат X_Y
-        endCoordinates.coorditanesChangedEvent.push(this.endCoordinatesChangedEventHandler)
+        endCoordinates.coordinatesChangedEvent.addSubscriber(this.endCoordinatesChangedEventHandler)
     }
 
     // Приватные поля
@@ -252,14 +273,14 @@ export class MovingVector{
      * затем их поменять, то вектор сменит свое направление */
     protected _endCoordinates: X_Y;
     /** id (key) подписки на событие изменение координат */
-    protected subscribeToEndCoordinatesChangedEventId: number;
+    protected subscribeToEndCoordinatesChangedEventId: Guid;
     /** обработчик события изменения координат */
-    protected endCoordinatesChangedEventHandler(newValues: X_Y){
+    protected endCoordinatesChangedEventHandler(eventInfo: CoordinatesChangedEventInfo){
         // сохраняем текущие координаты и прогресс
         this.savedPercentPathBeforePaused = this.getActualPercentPath();
         this._startCoordinates = this.getActualCoordinates();
         // устанавливаем новую конечную точку
-        this._endCoordinates = newValues;
+        this._endCoordinates = eventInfo.newValues;
     }
 
 
@@ -373,7 +394,7 @@ export class MovingVector{
     protected movingEnded(){
         this._isMoving = false;
         this.savedPercentPathBeforePaused = 1;      
-        this.endEvent.forEach(subscriber => {if(subscriber) subscriber()})
+        this.endEvent.invoke();
     }
 
     /** внутряняя функция стартования. Введена чтобы не дублировать код в start и pause */
@@ -393,10 +414,6 @@ export interface EndEvent {
     (): void;
 }
 
-/** событие о достижении конечных координат вектора у спрайта*/
-export interface VectorMovementEndedEvent {
-    (sprite: Sprite): void;
-}
 
 
 /** класс содержащий в себе все необходимой для корректной работы анимации у спрайта */

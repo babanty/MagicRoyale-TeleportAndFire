@@ -31,7 +31,13 @@ export function IsBelongingPointToCirle(point: X_Y, circleCenter: X_Y, radius: n
 }
 
 
-/** пересекаются ли указанный прямоугольник с указанным кругом */
+/** пересекаются ли указанный прямоугольник с указанным кругом 
+ * @param rectangleCenter -  центр прямоугольника
+ * @param rectangleWidth - ширина прямоугольника
+ * @param rectangleHeight - высота прямоугольника
+ * @param circleCenter - центр окружности
+ * @param circleRadius - радиус окружности
+*/
 export function IntersectionFigures_RectangleAndCirce(rectangleCenter: X_Y, rectangleWidth: number, 
                             rectangleHeight: number, circleCenter: X_Y, circleRadius: number) : boolean{
     
@@ -69,7 +75,7 @@ export function IntersectionFigures_RectangleAndCirce(rectangleCenter: X_Y, rect
  */
 export function IntersectionFigures_RectangleAndRectangle(oneLeftTop: X_Y, oneRightBottom: X_Y, 
                                                     twoLeftTop: X_Y, twoRightBottom: X_Y) : boolean{
-                                                        
+
     return ( oneLeftTop.y < twoRightBottom.y || oneRightBottom.y > twoLeftTop.y || 
                 oneRightBottom.x < twoLeftTop.x || oneLeftTop.x > twoRightBottom.x )  
 }

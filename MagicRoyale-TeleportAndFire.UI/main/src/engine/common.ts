@@ -1,12 +1,15 @@
+import { Guid } from "guid-typescript";
+
 /** координаты x и y в едином объекте для удобства работы с координатами */
 export class X_Y{
     public get x(): number{return this._x};
     public get y(): number{return this._y};
 
-    /** событие изменения координат. (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана)*/
-    public coorditanesChangedEvent: CoorditanesChangedEvent[];
+    /** событие изменения координат.*/
+    public coordinatesChangedEvent: EventDistributorWithInfo<CoordinatesChangedEvent, CoordinatesChangedEventInfo>;
 
     public constructor(x: number, y: number) {
+        this.coordinatesChangedEvent = new EventDistributorWithInfo<CoordinatesChangedEvent, CoordinatesChangedEventInfo>();
         this.setNewValues(x, y);
     }
 
@@ -20,7 +23,10 @@ export class X_Y{
         this._y = y;
 
         // вызываем отработку события изменения координат
-        this.coorditanesChangedEvent.forEach(subscriber => {if(subscriber) subscriber(this, oldValues)});
+        let eventInfo = new CoordinatesChangedEventInfo();
+        eventInfo.newValues = this;
+        eventInfo.oldValues = oldValues;
+        this.coordinatesChangedEvent.invoke(eventInfo);
     }
 
     private _x:number;
@@ -28,8 +34,14 @@ export class X_Y{
 }
 
 /** событие изменения координат */
-export interface CoorditanesChangedEvent {
-    (newValues: X_Y, oldValues: X_Y): void;
+export interface CoordinatesChangedEvent {
+    (eventInfo: CoordinatesChangedEventInfo): void;
+}
+
+/** информация о произошедшем событии */
+export class CoordinatesChangedEventInfo{
+    public newValues: X_Y;
+    public oldValues: X_Y;
 }
 
 
@@ -39,3 +51,82 @@ export interface CoorditanesChangedEvent {
 export function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+/** распространитель события с информацией. В момент возникнвения события вызывает методы которые ему передали (подписались на 
+ * событие и передает им информацию о событии).
+ * 
+ *  Пример создания: 
+ * 
+ * public CoorditanesChangedEvent: EventDistributor<CoorditanesChangedEvent, CoorditanesChangedEventInfo>;
+ * 
+ * export interface CoorditanesChangedEvent {(eventInfo: CoorditanesChangedEventInfo): void;}
+ * 
+ * export class CoorditanesChangedEventInfo { public newValues: X_Y; public oldValues: X_Y; }
+ * 
+ *  <Func - функция вызывающаяся при возникновении события, EventArgs - класс, который передается подписчику и содержит
+ *  информацию о событии
+ * 
+ *  Реализует паттерн издатель-подписчик. Главные 3 метода:
+ * - добавить функцию, которую вызывать при возникновении события - addSubscriber;
+ * - удалить функцию, которую вызывалась при возникновении события - deleteSubscriber; 
+ * - вызвать событие (сообщить о том, что событие наступило) - Invoke; */
+export class EventDistributorWithInfo<Func extends (eventArgs: EventArgs) => void, EventArgs>{
+    private subscribes: Map<Guid, Func> = new Map<Guid, Func>();
+
+    /** добавить функцию, которую вызывать при возникновении события. Возвращает id функции, чтобы ее можно было удалить по id  */
+    public addSubscriber(subscriber: Func) : Guid{
+        let id = Guid.create();
+        this.subscribes.set(id, subscriber);
+        return id;
+    }
+
+    /** удалить функцию, которую вызывалась при возникновении события по ее id, который отдавался при вызове метода addSubscriber */
+    public deleteSubscriber(id: Guid){
+        if(this.subscribes.has(id)){
+            this.subscribes.delete(id)
+        }
+    }
+
+    /** вызвать событие (сообщить подсчикам о том, что событие наступило) - вызвать ф-ии что сюда передали через addSubscriber 
+     * @param eventArgs - информация о произошедшем событии
+    */
+    public invoke(eventArgs: EventArgs){
+        this.subscribes.forEach(subscriber => {if(subscriber) subscriber(eventArgs)});
+    }
+}
+
+
+/** распространитель события. В момент возникнвения события вызывает методы которые ему передали (подписались на событие).
+ * 
+ * Не передает ни какой информации о событии. Если нужно не только сообщить о событии но и передать инфу о нем 
+ * используйте EventDistributorWithInfo
+ * 
+ *  Реализует паттерн издатель-подписчик. Главные 3 метода:
+ * - добавить функцию, которую вызывать при возникновении события - addSubscriber;
+ * - удалить функцию, которую вызывалась при возникновении события - deleteSubscriber; 
+ * - вызвать событие (сообщить о том, что событие наступило) - Invoke; */
+export class EventDistributor{
+    private subscribes: Map<Guid, SubscriberFunc> = new Map<Guid, SubscriberFunc>();
+
+    /** добавить функцию, которую вызывать при возникновении события. Возвращает id функции, чтобы ее можно было удалить по id  */
+    public addSubscriber(subscriber: SubscriberFunc) : Guid{
+        let id = Guid.create();
+        this.subscribes.set(id, subscriber);
+        return id;
+    }
+
+    /** удалить функцию, которую вызывалась при возникновении события по ее id, который отдавался при вызове метода addSubscriber */
+    public deleteSubscriber(id: Guid){
+        if(this.subscribes.has(id)){
+            this.subscribes.delete(id)
+        }
+    }
+
+    /** вызвать событие (сообщить подсчикам о том, что событие наступило) - вызвать ф-ии что сюда передали через addSubscriber */
+    public invoke(){
+        this.subscribes.forEach(subscriber => {if(subscriber) subscriber()});
+    }
+}
+/** функция подписчика, которая автоматически вызвается при наступлении события. Ей на вход ни какой инфы не приходит, 
+ * если нужно чтобы приходило, используйте EventDistributorWithInfo */
+export interface SubscriberFunc { (): void; }
