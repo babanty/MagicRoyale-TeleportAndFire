@@ -1,5 +1,6 @@
 import { Engine } from "./engine";
 import { Sprite } from "./sprite";
+import { EventDistributorWithInfo, EventDistributor } from "./common";
 
 /** класс отвечающий за все действия выполнящиеся движком */
 export class ActionController{
@@ -23,28 +24,20 @@ export class ActionController{
 
     }
 
-    /** пользовательские функции (действия) выполняющиеся в начале каждого шага (итерации) движка (60 раз в сек) 
-     * как сюда добавить: это стандартный массив, пример: actionsAtEveryStep.push(myFunc);
-     * 
-     * (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана)
-    */
-    public actionsAtEveryStep: OneEngineStep[];
+    /** сюда можно добавить функции (действия) выполняющиеся в начале каждого шага (итерации) движка (60 раз в сек) */
+    public actionsAtEveryStep = new EventDistributor();
 
     /** Действия, которы выполнятся при событии пересечения двух спрайтов. Отправляет функции-подписчику спрайты, 
      * которые пересеклись. 
     * - где первый спрайт - это тот кто двинулся, а второй - кто стоял (двинулись на него). 
-    * - событие вызывается после того как координаты изменились, но до того как картинка отрисовалась
-    * 
-    * (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана)*/
-    public intersectionEvent: IntersectionEvent[];
+    * - событие вызывается после того как координаты изменились, но до того как картинка отрисовалась*/
+    public intersectionEvent = new EventDistributorWithInfo<IntersectionEvent, IntersectionEventInfo>();
 
 
     /** главный шаг, вызывающийся 60 раз в сек */
     private mainStep(){
         // выполнить дополнительный действия каждого цикла
-        this.actionsAtEveryStep.forEach(element => {
-            element();
-        });
+        this.actionsAtEveryStep.invoke()
 
         // выполнить действие каждого отдельного спрайта
         this.engine.spriteHolder.sprites.forEach(sprite =>{
@@ -81,7 +74,7 @@ export class ActionController{
     /** отдельно вынесеная логика создания события перересечения спрайтов */
     private intersectionEventInitialization(){
         // подписываемся на событие в холдере о появлении нового спрайта
-        this.engine.spriteHolder.spriteCreatedEvent.push(this.sriteCreatedEventHandler);
+        this.engine.spriteHolder.spriteCreatedEvent.addSubscriber(this.sriteCreatedEventHandler);
         // sriteCreatedEventHandler подписывается на событие изменения координат у нового спрайта
 
         // что происходит далее:
@@ -106,7 +99,7 @@ export class ActionController{
     private sriteCreatedEventHandler(createdSprite: Sprite){
         // Действия для метода intersectionEventInitialization (см. там зачем)
         // подписываеся на событие изменения координат
-        createdSprite.coordinatesChangedEvent.push(this.spriteCoordinatesChangedEventHandler);
+        createdSprite.coordinatesChangedEvent.addSubscriber(this.spriteCoordinatesChangedEventHandler);
         // проверяем, если у нового спрайта уже заданы координаты, то считаем, что "координаты изменились" и вызываем соотвествующую ф-ю
         if(createdSprite.coordinates){
             this.spriteCoordinatesChangedEventHandler(createdSprite);
@@ -119,8 +112,25 @@ export class ActionController{
         // проверка пересечения спрайтов и если спрайт с кем-то пересекается, то генерируется событие intersectionEvent
         let intersectionSprites = this.engine.spriteHolder.getAllIntersection(sprite);
         if(intersectionSprites.length > 0){
-            this.intersectionEvent.forEach(subscriber => {if(subscriber) subscriber(sprite, intersectionSprites)});
+            let eventInfo = new IntersectionEventInfo(sprite, intersectionSprites)
+            this.intersectionEvent.invoke(eventInfo);
         }
+    }
+}
+
+/** Событие пересечения двух спрайтов. Отправляет функции-подписчику спрайты, которые пересеклись. 
+ * - событие вызывается после того как координаты изменились, но до того как картинка отрисовалась*/
+export interface IntersectionEvent {
+    (eventInfo: IntersectionEventInfo): void;
+}
+/** Информация о событии пересечения двух спрайтов. 
+ * - где первый спрайт - это тот кто двинулся и "врезался", а вторые - те кто стоял. 
+ * - событие вызывается после того как координаты изменились, но до того как картинка отрисовалась*/
+export class IntersectionEventInfo{
+    /** Информация о событии пересечения двух спрайтов. 
+    * @param moovingSprite - тот кто двинулся и "врезался"
+    * @param standingSprites - те кто стояли и двинулись на них*/
+    public constructor (public moovingSprite: Sprite, public standingSprites: Sprite[]){
     }
 }
 
@@ -182,15 +192,7 @@ class LoopWorker{
     }    
 }
 
-
 /** Ф-ия движка в которая повтораяется каждый шаг зациклено раз в n-мс (обычно 60 раз в секунду) */
 interface OneEngineStep {
     (): void;
-}
-
-/** Событие пересечения двух спрайтов. Отправляет функции-подписчику спрайты, которые пересеклись. 
- * - где первый спрайт - это тот кто двинулся и "врезался", а вторые - те кто стоял. 
- * - событие вызывается после того как координаты изменились, но до того как картинка отрисовалась*/
-interface IntersectionEvent {
-    (moovingSprite: Sprite, standingSprites: Sprite[]): void;
 }

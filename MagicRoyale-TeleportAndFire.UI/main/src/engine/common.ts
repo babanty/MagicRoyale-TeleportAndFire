@@ -6,10 +6,9 @@ export class X_Y{
     public get y(): number{return this._y};
 
     /** событие изменения координат.*/
-    public coordinatesChangedEvent: EventDistributorWithInfo<CoordinatesChangedEvent, CoordinatesChangedEventInfo>;
+    public coordinatesChangedEvent = new EventDistributorWithInfo<CoordinatesChangedEvent, CoordinatesChangedEventInfo>();
 
     public constructor(x: number, y: number) {
-        this.coordinatesChangedEvent = new EventDistributorWithInfo<CoordinatesChangedEvent, CoordinatesChangedEventInfo>();
         this.setNewValues(x, y);
     }
 

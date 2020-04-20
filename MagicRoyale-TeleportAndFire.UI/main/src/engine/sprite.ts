@@ -53,11 +53,9 @@ export class Sprite{
     /** событие, на спрайт навели мышь */
     public mouseMoveEvent: ((event: MouseEvent | TouchEvent) => any);
     /** событие изменения координат спрайта */
-    public coordinatesChangedEvent: EventDistributorWithInfo<CoordinatesChangedEvent, CoordinatesChangedEventInfo> 
-                                    = new EventDistributorWithInfo<CoordinatesChangedEvent, CoordinatesChangedEventInfo>();
+    public coordinatesChangedEvent = new EventDistributorWithInfo<SpriteCoordinatesChangedEvent, SpriteCoordinatesChangedEventInfo>();
     /** событие о достижении конечных координат вектора у спрайта */
-    public vectorMovementEndedEvent: EventDistributorWithInfo<VectorMovementEndedEvent, VectorMovementEndedEventInfo>
-                                    = new EventDistributorWithInfo<VectorMovementEndedEvent, VectorMovementEndedEventInfo>();
+    public vectorMovementEndedEvent = new EventDistributorWithInfo<VectorMovementEndedEvent, VectorMovementEndedEventInfo>();
 
     // Приватные поля
     /** [изменять через scale] масштаб, где 1 - это 1 к одному */
@@ -135,7 +133,11 @@ export class Sprite{
     /** ф-ю которая должна отрабатывать при изменении координат как таковых, а не этого спрайта */
     protected coorditanesChangedEventHandler(eventInfo: CoordinatesChangedEventInfo){
         // уведомляем подпсчиков о наступлении события изменении координат спрайта
-        this.coordinatesChangedEvent.invoke(eventInfo);
+        let newEventInfo = new SpriteCoordinatesChangedEventInfo();
+        newEventInfo.newValues = eventInfo.newValues;
+        newEventInfo.oldValues = eventInfo.oldValues;
+        newEventInfo.sprite = this;
+        this.coordinatesChangedEvent.invoke(newEventInfo);
     }
 
     /** вставить\заменить картинку спрайту 
@@ -186,7 +188,17 @@ export class VectorMovementEndedEventInfo{
     }
 }
 
+/** Событие возникающее при изменении координат спрайта. */
+export interface SpriteCoordinatesChangedEvent {
+    (eventInfo: SpriteCoordinatesChangedEventInfo): void;
+}
 
+/** информация о произошедшем событии */
+export class SpriteCoordinatesChangedEventInfo{
+    public sprite: Sprite
+    public newValues: X_Y;
+    public oldValues: X_Y;
+}
 
 /** вектор перемещения. Если он задается, то каждый такт спрайт изменяет свою координату */
 export class MovingVector{
@@ -211,9 +223,7 @@ export class MovingVector{
     public get startCoordinates(): X_Y{return this._startCoordinates}; 
 
     // События
-    /** событие о достижении конечных координат.
-     * 
-     *  (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана)*/
+    /** событие о достижении конечных координат.*/
     public endEvent: EventDistributor = new EventDistributor();
 
     // Сеттеры
@@ -492,11 +502,4 @@ export class SpriteAnimation{
         clearInterval(this._counterFrame); // удаляем функцию вызывающую раз внекоторое время смену кадра
         this.frameNumNext = 0;
     }
-}
-
-
-
-/** Событие возникающее при изменении координат спрайта. */
-interface SpriteCoordinatesChangedEvent {
-    (sprite: Sprite, newCoordinates: X_Y, oldCoordinates: X_Y): void;
 }

@@ -1,6 +1,6 @@
 import { Sprite, MaskFigure } from "./sprite";
 import Collections = require('typescript-collections');
-import {sleep, X_Y} from "./common";
+import {sleep, X_Y, EventDistributorWithInfo} from "./common";
 import { Guid } from "guid-typescript";
 import * as geometry from "./geometry";
 import { Engine } from "./engine";
@@ -12,8 +12,8 @@ export class SpriteHolder{
     /** все игровые объекты на карте. Для добавления и удаления объектов используйте createSprite\deleteSpriteById, а не эту коллекцию */
     public get sprites(): Collections.LinkedList<Sprite> {return this._sprites};
 
-    /** События создания спрайта (добавьте в массив функцию для подписки на событие, при возникновении события эта ф-я будет вызвана.) */ 
-    public spriteCreatedEvent: SpriteCreatedEvent[];
+    /** События создания спрайта */ 
+    public spriteCreatedEvent = new EventDistributorWithInfo<SpriteCreatedEvent, SpriteCreatedEventInfo>();
 
     // Приватные поля
     protected _sprites: Collections.LinkedList<Sprite>;
@@ -60,10 +60,12 @@ export class SpriteHolder{
     }
 
 
-    /** [!!!] добавить спрайт с уже заранее загруженной в ручную картинкой */
+    /** добавить спрайт с уже [!!!] заранее загруженной в ручную картинкой. Рекомендуется использовать вместо этого метода createSprite */
     public addSprite(sprite: Sprite){
         this._sprites.add(sprite);
-        this.spriteCreatedEvent.forEach(subscriber => {if(subscriber) subscriber(sprite)})
+
+        let eventInfo = new SpriteCreatedEventInfo(sprite);
+        this.spriteCreatedEvent.invoke(eventInfo);
     }
 
 
@@ -317,9 +319,14 @@ class InternalPicture{
 }
 
 
-/** событие вызывающеся при создании нового спрайта
- * @param createdSprite - собственно, тот кто был создан
-*/
+/** событие вызывающеся при создании нового спрайта */
 export interface SpriteCreatedEvent {
-    (createdSprite: Sprite): void;
+    (eventInfo: SpriteCreatedEventInfo): void;
 }
+/** информация о событии создания нового спрайта в spriteHolder-e */
+export class SpriteCreatedEventInfo {
+    /** @param createdSprite - собственно, тот кто был создан */
+    public constructor(public createdSprite: Sprite){
+    }
+}
+
