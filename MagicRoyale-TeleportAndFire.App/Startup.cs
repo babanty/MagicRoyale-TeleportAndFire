@@ -28,9 +28,10 @@ namespace MagicRoyale_TeleportAndFire.App
         {
             string connection = Configuration.GetConnectionString("DefaultConnection");
             services.AddDbContext<MagicRoyaleDbContext>(options => options.UseSqlServer(connection)); // Регистрируем в DI базу данных
-            services.AddControllersWithViews(); // 
+            services.AddControllersWithViews(); 
 
             services.AddTransient<IUsersManager, UsersManager>(); // Таким образом регают классы, у которых есть интерфейсы
+            services.AddTransient<ICharactersManager, CharactersManager>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
