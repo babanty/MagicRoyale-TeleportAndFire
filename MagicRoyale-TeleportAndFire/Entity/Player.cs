@@ -6,6 +6,13 @@ namespace MagicRoyale_TeleportAndFire.Entity
 {
     public class Player
     {
-        public Guid Id { get; set; } = new Guid();
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string PlayerStatus { get; set; }
+
+        public Player()
+        {
+            PlayerStatus = "offline";
+        }
+
     }
 }

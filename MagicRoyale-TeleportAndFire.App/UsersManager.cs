@@ -18,6 +18,7 @@ namespace MagicRoyale_TeleportAndFire.App
         {
             var entity = new User { Name = request.Name };
 
+            _dbContext.Players.Add(entity._player);
             _dbContext.Users.Add(entity);
             await _dbContext.SaveChangesAsync();
 
