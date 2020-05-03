@@ -1,5 +1,5 @@
 import { Guid } from "guid-typescript";
-import { X_Y, EventDistributor, CoordinatesChangedEvent, CoordinatesChangedEventInfo, EventDistributorWithInfo } from "./common";
+import { X_Y, EventDistributor, CoordinatesChangedEvent, CoordinatesChangedEventInfo, EventDistributorWithInfo, Size } from "./common";
 
 /** Любой объект на игровой карте */
 export class Sprite{
@@ -7,10 +7,8 @@ export class Sprite{
     // Обязательные поля
     /** id. Желательно должен соотвествовать тому, что лежит на сервере */
     public id: Guid;
-    /** ширина картинки */
-    public width: number;      
-    /** высота картинки */
-    public height: number;     
+    /** отображаемые размеры картинки в пикселях при масштае камеры 1 к 1. Оригинальный размер картинки может отличаться */
+    public picSize: Size;  
     /** масштаб, где 1 - это 1 к одному */
     public get scale(): number{return this._scale};
     /** путь до картинки.*/
@@ -85,8 +83,7 @@ export class Sprite{
     /** объеединяющий метод вызвающий прочие методы по созданию html-элемента canvas */
     public set scale (scale: number) {
         if(this.image){
-            this.width = this.image.width * scale;
-            this.height = this.image.height * scale;
+            this.picSize.setNewValues(this.image.width * scale, this.image.height * scale);
         }
 
         this._scale = scale;

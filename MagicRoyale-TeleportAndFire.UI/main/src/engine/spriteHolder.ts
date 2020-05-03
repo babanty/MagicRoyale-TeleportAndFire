@@ -172,8 +172,8 @@ export class SpriteHolder{
             // пересчитываем координаты спрайтов на физические координаты как они отрисовываются
             let usePointCoordinates = sprite.isStaticCoordinates ? coordinates : preparedCoordinates; // берем те координаты, которые используются при расчетах для этого конркетного спрайта
                     // TODO - возможно, то что ниже не правильно и вообще не надо делать
-            let useWidth = sprite.isStaticCoordinates ? sprite.width : this._engine.render.getRealCutLength(sprite.width); // рассчитываем правильную ширину спрайта 
-            let useHeight = sprite.isStaticCoordinates ? sprite.height : this._engine.render.getRealCutLength(sprite.height); // рассчитываем правильную ширину спрайта 
+            let useWidth = sprite.isStaticCoordinates ? sprite.picSize.width : this._engine.render.getRealCutLength(sprite.picSize.width); // рассчитываем правильную ширину спрайта 
+            let useHeight = sprite.isStaticCoordinates ? sprite.picSize.height : this._engine.render.getRealCutLength(sprite.picSize.height); // рассчитываем правильную ширину спрайта 
 
             // сперва отсеиваем всех у кого не совпадает прямоугольная область т.к. это дешевая операция
             if(!geometry.IsBelongingPointToRectangle(usePointCoordinates, sprite.coordinates, useWidth, useHeight)){
@@ -183,8 +183,8 @@ export class SpriteHolder{
             // затем проверяем на совпадение с учетом фигуры и вычитаем из массива совпадений тех, кто не подходит
             if(sprite.figure === MaskFigure.circle){ // если у спрайта фигура - круг, то смотрим входи ли точка в круг
                 if(!geometry.IsBelongingPointToCirle(usePointCoordinates, 
-                                                    new X_Y(sprite.coordinates.x + sprite.width / 2, sprite.coordinates.y + sprite.height / 2), // считаем центр круга
-                                                    sprite.width / 2)){ // считаем радиус
+                                                    new X_Y(sprite.coordinates.x + sprite.picSize.width / 2, sprite.coordinates.y + sprite.picSize.height / 2), // считаем центр круга
+                                                    sprite.picSize.width / 2)){ // считаем радиус
                     return;
                 }
             }
@@ -216,11 +216,8 @@ export class SpriteHolder{
         // сперва проверяем пересечения под прямоугольнику т.к. это дешевая операция
         this.sprites.forEach(sprite => {
             if(geometry.IntersectionFigures_RectangleAndRectangle(
-                                            checkedSprite.coordinates, 
-                                            new X_Y(checkedSprite.coordinates.x + checkedSprite.width, checkedSprite.coordinates.y + checkedSprite.height),
-                                            sprite.coordinates,
-                                            new X_Y(sprite.coordinates.x + sprite.width, sprite.coordinates.y + sprite.height)
-                                            )){
+                                            checkedSprite.coordinates, checkedSprite.picSize,
+                                            sprite.coordinates, sprite.picSize)){
                 suitableSprites.add(sprite);
             }
         })
@@ -247,28 +244,38 @@ export class SpriteHolder{
             // если оба спрайта - прямоугольники
             if(one.figure === MaskFigure.rectangle && two.figure === MaskFigure.rectangle){
                 let isIntersection = geometry.IntersectionFigures_RectangleAndRectangle(
-                    one.coordinates,
-                    new X_Y(one.coordinates.x + one.width, one.coordinates.y + one.height),
-                    two.coordinates,
-                    new X_Y(two.coordinates.x + two.width, two.coordinates.y + two.height);
+                                                                one.coordinates, one.picSize,
+                                                                two.coordinates, two.picSize);
                 return isIntersection;
             }
             
             // если проверяемый-спрайт - круг, а подошедший по прямоугольной области - прямоугольник
             if(one.figure === MaskFigure.circle && two.figure === MaskFigure.rectangle){
-                let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(two, one);
+                let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(
+                                                geometry.getRectangleCenter(two.coordinates, two.picSize),
+                                                two.picSize,
+                                                geometry.getRectangleCenter(one.coordinates, one.picSize),
+                                                geometry.getRadiusByRectangle(one.picSize));
                 return isIntersection;
             }
 
             // если проверяемый-спрайт - прямоугольник, а подошедший по прямоугольной области - круг
             if(one.figure === MaskFigure.rectangle && two.figure === MaskFigure.circle){
-                let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(one, two);
+                let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(
+                                                geometry.getRectangleCenter(one.coordinates, one.picSize),
+                                                one.picSize,
+                                                geometry.getRectangleCenter(two.coordinates, two.picSize),
+                                                geometry.getRadiusByRectangle(two.picSize));
                 return isIntersection;
             }
 
             // если проверяемый-спрайт - круг, и подошедший по прямоугольной области - круг
             if(one.figure === MaskFigure.circle && two.figure === MaskFigure.circle){
-                let isIntersection = geometry.IntersectionFigures_CirceAndCirce(one, two);
+                let isIntersection = geometry.IntersectionFigures_CirceAndCirce(
+                    geometry.getRectangleCenter(one.coordinates, one.picSize), 
+                    geometry.getRadiusByRectangle(one.picSize),
+                    geometry.getRectangleCenter(two.coordinates, two.picSize),
+                    geometry.getRadiusByRectangle(two.picSize));
                 return isIntersection;
             }
     }

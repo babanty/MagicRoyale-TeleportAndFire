@@ -133,7 +133,9 @@ export interface SubscriberFunc { (): void; }
 
 /** размеры в 2D - ширина и высота */
 export class Size{
+    /** ширина */
     public get width(): number{return this._width};
+    /** высота */
     public get height(): number{return this._height};
 
     /** событие изменения размера.*/

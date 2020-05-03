@@ -73,11 +73,27 @@ export function IntersectionFigures_RectangleAndCirce(rectangleCenter: X_Y, rect
  *    |                          |
  *    |---------------------(b.x1,b.y1)
  */
-export function IntersectionFigures_RectangleAndRectangle(oneLeftTop: X_Y, oneRightBottom: X_Y, 
+export function IntersectionFiguresByCoordinates_RectangleAndRectangle(oneLeftTop: X_Y, oneRightBottom: X_Y, 
                                                     twoLeftTop: X_Y, twoRightBottom: X_Y) : boolean{
 
     return ( oneLeftTop.y < twoRightBottom.y || oneRightBottom.y > twoLeftTop.y || 
                 oneRightBottom.x < twoLeftTop.x || oneLeftTop.x > twoRightBottom.x )  
+}
+
+/** пересекаются ли указанный прямоугольник с другим прямоугольником. Дешевая (быстрая по скорости) операция проверки.
+ * @param oneCoordinates - координаты первого прямоугольника (левый верхний край)
+ * @param oneSize - размеры первого прямоугольника
+ * @param twoCoordinates - координаты второго прямоугольника (левый верхний край)
+ * @param twoSize - размеры второго прямоугольника
+ */
+export function IntersectionFigures_RectangleAndRectangle(oneCoordinates: X_Y, oneSize: Size, 
+                                                    twoCoordinates: X_Y, twoSize: Size): boolean{
+    return IntersectionFiguresByCoordinates_RectangleAndRectangle(
+        oneCoordinates, 
+        new X_Y(oneCoordinates.x + oneSize.width, oneCoordinates.y + oneSize.height),
+        twoCoordinates,
+        new X_Y(twoCoordinates.x + twoSize.width, twoCoordinates.y + twoSize.height)
+    );
 }
 
 /** пересекаются ли указанный круг с другим кругом 
@@ -102,4 +118,23 @@ export function IntersectionFigures_CirceAndCirce(oneCenter: X_Y, oneRadius: num
 /** вычислить расстояние между двумя точками на плоскости */
 export function distanceBetweenPoints(onePoint: X_Y, twoPoint: X_Y) : number {
     return Math.sqrt(((twoPoint.x - onePoint.x) ** 2) + ((twoPoint.y - onePoint.y) ** 2));
+}
+
+
+/** вернуть центр прямоугольника.
+ * @param leftTopRectanglePoint - координата левого верхнеуго угла прямоугольника
+ * @param size - размеры прямоугольника
+ */
+export function getRectangleCenter(leftTopRectanglePoint: X_Y, size: Size) : X_Y{
+    return new X_Y(leftTopRectanglePoint.x + size.width / 2, leftTopRectanglePoint.y + size.height / 2);
+}
+
+
+/** Получить радиус круга если он вписан в прямоугольник. Это костыль в самом деле :) По хорошему это должен быть квадрат
+ * и мы надеемся, что так оно и есть, но если это прямоугольник, который почти квадрат т.к. ширина и высота различается на +-
+ * чуть чуть пикселей, то эта ф-я более-менее приемлимо посчитает радиус
+*/
+export function getRadiusByRectangle(rectangleSize: Size) : number{
+    // диаметр будет средний величиной между шириной и высотой. А радиус в двое меньше
+    return (rectangleSize.width + rectangleSize.height) / 4; 
 }

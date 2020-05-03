@@ -124,14 +124,14 @@ export class Render{
      */
     public absoluteCoordinatesToGameCoordinates(absoluteCoordinates: X_Y) : X_Y {
         // спервая учитываем камеру
-        let result = new X_Y(absoluteCoordinates.x + this.camera.coordinates.x, 
-                            absoluteCoordinates.y + this.camera.coordinates.y);
+        let x = absoluteCoordinates.x + this.camera.coordinates.x;
+        let y = absoluteCoordinates.y + this.camera.coordinates.y;
 
         // учитываем масштаю
-        result.x = result.x * this.camera.scaleMap;
-        result.y = result.y * this.camera.scaleMap;
+        x = x * this.camera.scaleMap;
+        y = y * this.camera.scaleMap;
 
-        return result;
+        return new X_Y(x, y);
     }
 
     /** пересчитать длину отрезка (например ширину спрайта) на ту реальную длину в пикселях, которую будет отрисовывать рендериг
@@ -156,7 +156,7 @@ export class Render{
         sprites.sort((a, b) => { // используем встроенную в массивы ф-ию сортировки https://habr.com/ru/post/279867/
             if (a.layer == b.layer) { // если у спрайтов одинаковые слои
                 // сортировка по возростанию координаты
-                return (a.coordinates.y + a.height) - (b.coordinates.y + b.height);
+                return (a.y + a.height) - (b.y + b.height);
             } else { // если у спрайтов разные слои
                 // сортировка по возростанию слоя
                 return a.layer - b.layer;
@@ -191,9 +191,10 @@ export class Render{
         result.layer = sprite.layer;
         result.picture = sprite.image;
         result.rotate = sprite.rotate;
-        result.width = sprite.width;
-        result.height = sprite.height;
-        result.coordinates = new X_Y(sprite.coordinates.x, sprite.coordinates.y);
+        result.width = sprite.picSize.width;
+        result.height = sprite.picSize.height;
+        result.x = sprite.coordinates.x;
+        result.y = sprite.coordinates.y;
 
         // Начинается логика
 
@@ -219,16 +220,17 @@ export class Render{
         }
 
         // учитываем смещение (отклонение) для x,y-координат спрайта
-        result.coordinates.x = result.coordinates.x + sprite.offsetPic.x;
-        result.coordinates.y = result.coordinates.y + sprite.offsetPic.y;
+
+        result.x = result.x + sprite.offsetPic.x;
+        result.y = result.y + sprite.offsetPic.y;
 
         // учитываем параметры камеры
         if(sprite.isStaticCoordinates !== true){ // на статические спрайты не распространяется
             // умножаем координаты спрайта на масштаб;
             // умножаем координаты камеры на масштаб;
             // смещаем координаты на положение камеры
-            result.coordinates.x = (result.coordinates.x * this.camera.scaleMap) + (this.camera.coordinates.x  * this.camera.scaleMap)
-            result.coordinates.y = (result.coordinates.y * this.camera.scaleMap) + (this.camera.coordinates.y  * this.camera.scaleMap)
+            result.x = (result.x * this.camera.scaleMap) + (this.camera.coordinates.x  * this.camera.scaleMap)
+            result.y = (result.y * this.camera.scaleMap) + (this.camera.coordinates.y  * this.camera.scaleMap)
         }
 
 
@@ -243,7 +245,7 @@ export class Render{
         this.canvasContext.save(); 
 
         // делаем центр холста у этой картинки
-        this.canvasContext.translate(sprite.coordinates.x, sprite.coordinates.y); 
+        this.canvasContext.translate(sprite.x, sprite.y); 
         this.canvasContext.translate(sprite.width / 2, sprite.height / 2);
 
         // крутим канвас если у картинку указано, что ее нужно крутануть 
@@ -281,8 +283,10 @@ class SpriteWrapper{
     // Публичные поля
     /** id оригинально спрайта. Поддержана иммутабельность приходящего значения (здесь записывается новый класс) */
     public get spriteId(): Guid{return this._spriteId};
-    /** координаты спрайта для канваса. */
-    public coordinates: X_Y;
+    /** x-координата спрайта для канваса. */
+    public x: number;
+    /** y-координата спрайта для канваса. */
+    public y: number;
     /** готовая картинка */
     public picture: CanvasImageSource;
     /** ширина отрисовываемой картинки в px*/
