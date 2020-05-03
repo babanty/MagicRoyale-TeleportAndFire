@@ -215,7 +215,12 @@ export class SpriteHolder{
 
         // сперва проверяем пересечения под прямоугольнику т.к. это дешевая операция
         this.sprites.forEach(sprite => {
-            if(geometry.IntersectionFigures_RectangleAndRectangle()){
+            if(geometry.IntersectionFigures_RectangleAndRectangle(
+                                            checkedSprite.coordinates, 
+                                            new X_Y(checkedSprite.coordinates.x + checkedSprite.width, checkedSprite.coordinates.y + checkedSprite.height),
+                                            sprite.coordinates,
+                                            new X_Y(sprite.coordinates.x + sprite.width, sprite.coordinates.y + sprite.height)
+                                            )){
                 suitableSprites.add(sprite);
             }
         })
@@ -241,7 +246,11 @@ export class SpriteHolder{
 
             // если оба спрайта - прямоугольники
             if(one.figure === MaskFigure.rectangle && two.figure === MaskFigure.rectangle){
-                let isIntersection = geometry.IntersectionFigures_RectangleAndRectangle(one, two);
+                let isIntersection = geometry.IntersectionFigures_RectangleAndRectangle(
+                    one.coordinates,
+                    new X_Y(one.coordinates.x + one.width, one.coordinates.y + one.height),
+                    two.coordinates,
+                    new X_Y(two.coordinates.x + two.width, two.coordinates.y + two.height);
                 return isIntersection;
             }
             

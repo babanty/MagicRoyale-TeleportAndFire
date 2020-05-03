@@ -129,3 +129,47 @@ export class EventDistributor{
 /** функция подписчика, которая автоматически вызвается при наступлении события. Ей на вход ни какой инфы не приходит, 
  * если нужно чтобы приходило, используйте EventDistributorWithInfo */
 export interface SubscriberFunc { (): void; }
+
+
+/** размеры в 2D - ширина и высота */
+export class Size{
+    public get width(): number{return this._width};
+    public get height(): number{return this._height};
+
+    /** событие изменения размера.*/
+    public sizeChangedEvent = new EventDistributorWithInfo<SizeChangedEvent, SizeChangedEventInfo>();
+
+    public constructor(width: number, height: number) {
+        this.setNewValues(width, height);
+    }
+
+    /** вставить новые значения размера */
+    public setNewValues(width: number, height: number){
+        // записываем старые значения для события
+        let oldValues = new Size(this.width, this.height);
+
+        // перезапизаписываем значения на новые
+        this._width = width;
+        this._height = height;
+
+        // вызываем отработку события изменения размеров
+        let eventInfo = new SizeChangedEventInfo();
+        eventInfo.newValues = this;
+        eventInfo.oldValues = oldValues;
+        this.sizeChangedEvent.invoke(eventInfo);
+    }
+
+    private _width:number;
+    private _height:number;
+}
+
+/** событие изменения размеров */
+export interface SizeChangedEvent {
+    (eventInfo: SizeChangedEventInfo): void;
+}
+
+/** информация о произошедшем событии */
+export class SizeChangedEventInfo{
+    public newValues: Size;
+    public oldValues: Size;
+}

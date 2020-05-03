@@ -1,4 +1,4 @@
-import { X_Y } from "./common";
+import { X_Y, Size } from "./common";
 
 /** Входит ли указанная точка в прямоугольник 
  * @param point - собтственно проверяемая точка
@@ -38,20 +38,20 @@ export function IsBelongingPointToCirle(point: X_Y, circleCenter: X_Y, radius: n
  * @param circleCenter - центр окружности
  * @param circleRadius - радиус окружности
 */
-export function IntersectionFigures_RectangleAndCirce(rectangleCenter: X_Y, rectangleWidth: number, 
-                            rectangleHeight: number, circleCenter: X_Y, circleRadius: number) : boolean{
+export function IntersectionFigures_RectangleAndCirce(rectangleCenter: X_Y, rectangleSize: Size, 
+                                                circleCenter: X_Y, circleRadius: number) : boolean{
     
     // https://codengineering.ru/q/circle-rectangle-collision-detection-intersection-21544/
 
     let circleDistance = new X_Y(Math.abs(circleCenter.x - rectangleCenter.x), Math.abs(circleCenter.y - rectangleCenter.y));
 
-    if (circleDistance.x > (rectangleWidth/2 + circleRadius)) { return false; }
-    if (circleDistance.y > (rectangleHeight/2 + circleRadius)) { return false; }
+    if (circleDistance.x > (rectangleSize.width/2 + circleRadius)) { return false; }
+    if (circleDistance.y > (rectangleSize.height/2 + circleRadius)) { return false; }
 
-    if (circleDistance.x <= (rectangleWidth/2)) { return true; } 
-    if (circleDistance.y <= (rectangleHeight/2)) { return true; }
+    if (circleDistance.x <= (rectangleSize.width/2)) { return true; } 
+    if (circleDistance.y <= (rectangleSize.height/2)) { return true; }
 
-    let cornerDistance_sq = (circleDistance.x - rectangleWidth/2)^2 + (circleDistance.y - rectangleHeight/2)^2;
+    let cornerDistance_sq = (circleDistance.x - rectangleSize.width/2)^2 + (circleDistance.y - rectangleSize.height/2)^2;
 
     return (cornerDistance_sq <= (circleRadius ** 2));
 }
