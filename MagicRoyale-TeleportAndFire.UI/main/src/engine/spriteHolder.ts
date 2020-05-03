@@ -54,13 +54,10 @@ export class SpriteHolder{
         this.addSprite(sprite);
 
         return sprite;
-
-        // TODO докинуть ф-ию createSprite<наследник>
-        // TODO поменять addSprite, добавив config: PictureConfig? то есть не обязательный. если есть он загрузит, если нет - добавит как есть
     }
 
 
-    /** добавить спрайт с уже [!!!] заранее загруженной в ручную картинкой. Рекомендуется использовать вместо этого метода createSprite */
+    /** добавить спрайт с уже [!!!] заранее загруженной с сервера в ручную картинкой. Рекомендуется использовать вместо этого метода createSprite */
     public addSprite(sprite: Sprite){
         this._sprites.add(sprite);
 

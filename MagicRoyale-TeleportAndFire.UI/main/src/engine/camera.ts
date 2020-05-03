@@ -3,8 +3,12 @@ import { X_Y } from "./common";
 /** Класс отвечающий за камеру (глаза игрока) в игре  */
 export class Camera{
 
-    /** центральная координата камеры на которую она смотрит. Эта центральная координата ровно по центру canvas-a) */
+    /** можно ли движением мыши менять положение камеры (изменять ее координаты) */
+    public mouseScrollingOn: boolean = true; 
+
+    /** центральная координата камеры на которую она смотрит. Эта центральная координата ровно по центру canvas-a). */
     public coordinates: X_Y;
+
     /** масштаб карты, при изменении этого числа можно "приближать" и "удалять" камеру.
      * Значение 1 - значит спрайты будут отрисовываться согласно заданого им размера в px 1 к 1.
      * Ограничение: максимальное приближение: в переменной minScaleMap (т.е. 0.00001), меньше число нельзя
@@ -21,13 +25,12 @@ export class Camera{
     /** минимальное приближение карты, меньше число нельзя */
     public get minScaleMap(): number{return 0.00001};
 
-    // TODO [NotImpl] - какой-то странный конструктор, аргументы левые
     /** Конструктор класса - отвечающего за камеру (глаза игрока) в игре
     * @constructor
     */
-    public constructor(coordinates: X_Y, scaleMap) {
-        this.coordinates = new X_Y(0, 0);
-        this.scaleMap = 1;
+    public constructor(coordinates: X_Y = new X_Y(0, 0), scaleMap = 1) {
+        this.coordinates = coordinates;
+        this.scaleMap = scaleMap;
     }
 
 // - Камера

@@ -37,7 +37,7 @@ export class Sprite{
     /** просто сюда можно добавить какой-то текст\объект и т.д. по необходимости для личных нужд. На работу движка это поле не влияет */
     public tag: any;
     /** здесь функции что исполняются каждый такт. (!) Принимают на вход спрайт, дествие которого исполяется, то есть этого (this.) */
-    public functionsInGameLoop: ActInGameLoop[];
+    public functionsInGameLoop = new EventDistributorWithInfo<ActInGameLoop, Sprite>();
     /** смещение (отклонение) реальной картинки от маски. То есть обработка нажатий на маску и реально отрисовываемая 
      *  картинка могут быть в разных местах.
      *  Это костыль на случай, если лень нормально вырезать в пеинте картинку, чтобы она правильно ложилась на маску */
@@ -103,16 +103,17 @@ export class Sprite{
     public set vector(vector: MovingVector){
         this._vector = vector;
         this._vector.endEvent.addSubscriber(this.endEventHandler); // подписываемся на событие вектора о том что движение по нему окончено
-        this.functionUpdatingCoorditanesEveryStepId = this.functionsInGameLoop.push(this.updatingCoordinatesByVector);
+        this.functionUpdatingCoorditanesEveryStepId = this.functionsInGameLoop.addSubscriber(this.updatingCoordinatesByVector);
     }
     protected endEventHandler(){ 
         // передаем подписчикам, что движение по вектору окончено
         this.vectorMovementEndedEvent.invoke(new VectorMovementEndedEventInfo(this));
         // прекращаем актуализировать текущие координаты согласно вектору
-        // TODO ?
+        this.functionsInGameLoop.deleteSubscriber(this.functionUpdatingCoorditanesEveryStepId);
+        
     }
     /** id (key) в массиве functionsInGameLoop с функцией актуализации координат каждый шаг */
-    protected functionUpdatingCoorditanesEveryStepId: number;
+    protected functionUpdatingCoorditanesEveryStepId: Guid;
 
 
     public set coordinates(coordinates: X_Y){
@@ -180,6 +181,7 @@ export interface ActInGameLoop {
 export interface VectorMovementEndedEvent {
     (eventInfo: VectorMovementEndedEventInfo): void;
 }
+/** информация о событии о достижении конечных координат вектора у спрайта*/
 export class VectorMovementEndedEventInfo{
     constructor (public sprite: Sprite){
     }
@@ -194,6 +196,7 @@ export interface SpriteCoordinatesChangedEvent {
 export class SpriteCoordinatesChangedEventInfo{
     public sprite: Sprite
     public newValues: X_Y;
+    /** может быть null при создании спрайта */
     public oldValues: X_Y;
 }
 
