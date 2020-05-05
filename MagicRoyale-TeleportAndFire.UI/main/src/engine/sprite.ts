@@ -47,9 +47,9 @@ export class Sprite{
 
     // События
     /** что делать объекту, если на него кликнули */
-    public mouseClickEvent: ((event: MouseEvent | TouchEvent) => any);
+    public mouseClickEvent: ((event: MouseEvent) => any);
     /** событие, на спрайт навели мышь */
-    public mouseMoveEvent: ((event: MouseEvent | TouchEvent) => any);
+    public mouseMoveEvent: ((event: MouseEvent) => any);
     /** событие изменения координат спрайта */
     public coordinatesChangedEvent = new EventDistributorWithInfo<SpriteCoordinatesChangedEvent, SpriteCoordinatesChangedEventInfo>();
     /** событие о достижении конечных координат вектора у спрайта */

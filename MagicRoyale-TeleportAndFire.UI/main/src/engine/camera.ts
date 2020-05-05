@@ -1,10 +1,8 @@
 import { X_Y } from "./common";
+import { Canvas } from "./canvas";
 
 /** Класс отвечающий за камеру (глаза игрока) в игре  */
 export class Camera{
-
-    /** можно ли движением мыши менять положение камеры (изменять ее координаты) */
-    public mouseScrollingOn: boolean = true; 
 
     /** центральная координата камеры на которую она смотрит. Эта центральная координата ровно по центру canvas-a). */
     public coordinates: X_Y;
@@ -28,9 +26,31 @@ export class Camera{
     /** Конструктор класса - отвечающего за камеру (глаза игрока) в игре
     * @constructor
     */
-    public constructor(coordinates: X_Y = new X_Y(0, 0), scaleMap = 1) {
+    public constructor( private canvas: Canvas,
+                        coordinates: X_Y = new X_Y(0, 0), scaleMap = 1) {
         this.coordinates = coordinates;
         this.scaleMap = scaleMap;
+    }
+
+    /** установить новый масштаб карты отностельно текущего
+     * @param howMuchToChangeScaleMap - то на сколько изменить масштаб карты, где 1.00 - это приблизить на 100% от текущего положения. 
+     *      Масштаб будет изменен относительно того что есть сейчас
+     * @param target - то куда приближать. Если null, то приближать будет к текущему положения камеры
+    */
+    public setScaleMap(howMuchToChangeScaleMap: number, target: X_Y = null){
+
+        if(!target) target = new X_Y(this.coordinates.x, this.coordinates.y);
+
+        let numAdd = 1 + howMuchToChangeScaleMap;
+        this.scaleMap = scaleMap * numAdd; // изменяем масштаб карты
+
+        if (numAdd - 1 > 0) { // если мы приближаем
+            this.coordinates = new X_Y(numAdd * camera.x + target.x * (1 - numAdd),
+                                        numAdd * camera.y + target.y * (1 - numAdd));
+        } else { // если камера удаляется
+            this.coordinates = new X_Y( this.canvas.canvasElement.width * (1 - numAdd) / 2 + numAdd * this.coordinates.x,
+                                        this.canvas.canvasElement.height * (1 - numAdd) / 2 + numAdd * this.coordinates.y);
+        }
     }
 
 // - Камера

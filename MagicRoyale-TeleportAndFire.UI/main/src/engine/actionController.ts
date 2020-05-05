@@ -8,11 +8,15 @@ export class ActionController{
 
     /** класс отвечающий за главный цикл, который повторяется 60 раз в сек */
     public get loopWorker(): LoopWorker{return this._loopWorker};
+    /** реагирует на распознанные команды пользователя (а распознает UserInputToolResolver) */
+    public get userInputController(): UserInputController{return this._userInputController};
 
 
     // Приватные поля
     private _loopWorker: LoopWorker;
     private _userInputToolResolver: UserInputToolResolver;
+    /** реагирует на распознанные команды пользователя (а распознает UserInputToolResolver) */
+    private _userInputController: UserInputController;
 
     /** Конструктор класса - отвечающего за все действия выполнящиеся движком
      * @constructor
@@ -52,15 +56,12 @@ export class ActionController{
 
     /** инициализиуруем обработчики событий, например событий клика мыши */ 
     private eventsHandlersInitilization(){
-        // TODO [NotImpl] - перехват масштабирования\перемещения карты
-        // - сперва надо закинуть события мыши и колесика на канвас
-        // - сделать переменную для действия кастомного, которые вызываются при клике на html-канвас
-        // - сделать "распределить" клика\2х пальцев вызывая ф-ю клика на спрайт или изменения положения камеры или масштабирования
 
         // распознает что хотел сделать пользователь
-        this._userInputToolResolver = new UserInputToolResolver();
-
+        this._userInputToolResolver = new UserInputToolResolver(this.engine);
         // TODO [NotImpl] - сейчас мы только отправляем события resolver-у, но при этом у нас должена быть переменная для прочих подписчиков
+        // 1111 - canvasOnMouseMove
+        // 1273 - стандартные обработчики
 
         this.engine.canvas.canvasElement.onclick = this._userInputToolResolver.canvasOnClick;
         this.engine.canvas.canvasElement.onmousemove = this._userInputToolResolver.canvasOnMouseMove;
@@ -70,21 +71,21 @@ export class ActionController{
         // указываем что делать если водят пальцем по экрану
         this.engine.canvas.canvasElement.addEventListener("touchmove", this._userInputToolResolver.canvasOnTouchMove, false);
         // указываем что делать если отжали палец от экрана телефона
-        this.engine.canvas.canvasElement.addEventListener("touchend", this._userInputToolResolver.canvasOnMouseUp, false);
-        this.engine.canvas.canvasElement.addEventListener("touchcancel", this._userInputToolResolver.canvasOnMouseUp, false);
+        this.engine.canvas.canvasElement.addEventListener("touchend", this._userInputToolResolver.canvasOnClickUp, false);
+        this.engine.canvas.canvasElement.addEventListener("touchcancel", this._userInputToolResolver.canvasOnClickUp, false);
 
         // указываем что делать если зажали мышь
         this.engine.canvas.canvasElement.onmousedown = this._userInputToolResolver.canvasOnMouseDown;
         // указываем что делать если отжали мышь
-        this.engine.canvas.canvasElement.onmouseup = this._userInputToolResolver.canvasOnMouseUp;
-        this.engine.canvas.canvasElement.onmouseout = this._userInputToolResolver.canvasOnMouseUp;
+        this.engine.canvas.canvasElement.onmouseup = this._userInputToolResolver.canvasOnClickUp;
+        this.engine.canvas.canvasElement.onmouseout = this._userInputToolResolver.canvasOnClickUp;
     
         // реакция на колесико мыши, масштабирование карты WheelEvent
         this.engine.canvas.canvasElement.onwheel = this._userInputToolResolver.canvasOnWeelMouse;
 
-        // 1111 - canvasOnMouseMove
-        // 1273 - стандартные обработчики
-        
+        // указываем, кто будет обрабатывать все эти события с мыши\тача
+        this._userInputController = new UserInputController(this.engine, this._userInputToolResolver);
+
         // Обработка событий пересечения
         this.intersectionEventInitialization();
         
@@ -223,13 +224,17 @@ interface OneEngineStep {
  * хотел сделать (какую конкретно команду вызывать. Пример: переместить что-то зажав мышь или сделать скролл экрана)
  */
 class UserInputToolResolver{
-// TODO Проблемы: различить зажатие мыши и клик; масштабирование мышью и пальцами; различить зажатый палец от масштабирования
+// Разрешает проблемы: различить зажатие мыши и клик; масштабирование мышью и пальцами; различить зажатый палец от масштабирования
+// TODO зарефакторить это при дебаге
 
-    // событие навели мышь на указанные координаты
-    public canvasOnMouseMoveEvent = new EventDistributorWithInfo<EngineMouseEvent, MouseEvent>();
-    // событие кликнули мышью\палецем на указанные координаты (+ указать на какой спрайт попали или null)
-    // событие изменили масштаб
-    // событие проскролили карту
+    /** событие навели мышь на указанные координаты */
+    public engineOnMouseMoveEvent = new EventDistributorWithInfo<EngineMouseEvent, EngineMouseEventInfo>();
+    /** событие кликнули мышью\палецем на указанные координаты (+ указать на какой спрайт попали или null) */
+    public engineOnMouseClickEvent = new EventDistributorWithInfo<EngineMouseEvent, EngineMouseEventInfo>();
+    /** событие о необходимости изменить масштаб */
+    public setMapScaleEvent = new EventDistributorWithInfo<SetScaleEvent, SetScaleEventInfo>();
+    /** событие о необходимости проскролить карту */
+    public setScrollMapEvent = new EventDistributorWithInfo<SetScrollMapEvent, SetScrollMapEventInfo>();
 
     /** расположение камеры в момент нажатия мыши TODO - оно надо? проверить ссылки*/
     private mouseDownCamera: X_Y;
@@ -242,6 +247,8 @@ class UserInputToolResolver{
     private oldTouchID: number;
     /** сохранение параметров предыдущего нажатия двумя пальцами. */
     private twoTouchWrapper: TwoTouchWrapper = new TwoTouchWrapper(new X_Y(0,0), new X_Y(0,0), 0);
+    /** зажата ли сейчас левая кнопка мыши над канвасом */
+    private isCanvasOnMouseDown = false;
     
 
     /** Конструктор класса - отвечающего за все действия выполнящиеся движком
@@ -250,37 +257,58 @@ class UserInputToolResolver{
     */
     constructor(private engine: Engine) {}
 
+
     public canvasOnClick(eventInfo: MouseEvent){
-        // TODO 
-        if (camera.x < mouseDownCamera[0] + 10 && camera.x > mouseDownCamera[0] - 10 // если именно кликнули, а не зажати мышь ибо срабатывает клик и там и там.
-            && camera.y < mouseDownCamera[1] + 10  && camera.y > mouseDownCamera[1] -10) { // если именно кликнули, а не зажати мышь ибо срабатывает клик и там и там.
+        // TODO глянуть в Desktop js - 1060 строка
+        // if (camera.x < mouseDownCamera[0] + 10 && camera.x > mouseDownCamera[0] - 10 // если именно кликнули, а не зажати мышь ибо срабатывает клик и там и там.
+        //     && camera.y < mouseDownCamera[1] + 10  && camera.y > mouseDownCamera[1] -10) { // если именно кликнули, а не зажати мышь ибо срабатывает клик и там и там.
             // магическое число 10, это то на сколько пикселей можно отклониться, тогда все ровно будет засчитан клик, а не перетаскивание. Это если слишком быстро двигают мышью
     
             // вычисляем на какой спрайт нажали
-            var spriteClick = engineController.whoOnThisPlaceMaxLayer(event.pageX, event.pageY);
+            let engineOnMouseMoveEvent = new EngineMouseEventInfo()
+        
+            engineOnMouseMoveEvent.mouseEventInfo = eventInfo;
     
-            // если спрайт не найден, то вычисляем какой шестиугольник находится в данных координатах
-            if (!spriteClick) {
-                xyz = getCalculateCoordinateOfGridWhenClickMouse(event.pageX, event.pageY);
-                eventClickedOnEmptyHexagon(xyz[0], xyz[1], xyz[2]);
-            }
+            let coordinates = new X_Y(eventInfo.offsetX, eventInfo.offsetY)
+            let sprite = this.engine.spriteHolder.whoOnThisPlace(coordinates, true, false);
+            engineOnMouseMoveEvent.sprite = sprite.length >= 0 ? sprite[0] : null;
     
-            // вызываем функцию, которая должна срабатывать при нажатии на данный спрайт
-            if (spriteClick && spriteClick.eventMouseClick) {
-                spriteClick.eventMouseClick(event);
-            }
-        } 
+            this.engineOnMouseMoveEvent.invoke(engineOnMouseMoveEvent);
+        // } 
     }
 
-    // TODO может удалить? проверить, invoke-ает ли кто в этом класс еще canvasOnMouseMoveEvent
+
     public canvasOnMouseMove(eventInfo: MouseEvent){
-        this.canvasOnMouseMoveEvent.invoke(eventInfo);
+        // особенный сценарий, который перебивает основную работу этого события - мы не просто ведем мышь, но еще и при этом с 
+        //    зажатой левой кнопкой мыши
+        if(this.isCanvasOnMouseDown){
+            // вызываем событие перемещения камеры
+            let setScrollMapEventInfo = new SetScrollMapEventInfo();
+            setScrollMapEventInfo.scroll = new Size(-(this.startCoordinates.x - eventInfo.offsetX), 
+                                                    -(this.startCoordinates.y - eventInfo.offsetY));
+            this.setScrollMapEvent.invoke(setScrollMapEventInfo);
+
+            this.startCoordinates = new X_Y(eventInfo.offsetX, eventInfo.offsetY)
+            return; // прерываем дальнейшую обработку события
+        }
+
+
+        let engineOnMouseMoveEvent = new EngineMouseEventInfo()
+        
+        engineOnMouseMoveEvent.mouseEventInfo = eventInfo;
+
+        let coordinates = new X_Y(eventInfo.offsetX, eventInfo.offsetY)
+        let sprite = this.engine.spriteHolder.whoOnThisPlace(coordinates, true, false);
+        engineOnMouseMoveEvent.sprite = sprite.length >= 0 ? sprite[0] : null;
+
+        this.engineOnMouseMoveEvent.invoke(engineOnMouseMoveEvent);
     }
 
 
     public canvasOnTouchStart(eventInfo: TouchEvent){
+        if (eventInfo.touches[1]) return // если это второй палец, то не реагируем
+
         this.touchID += 1; // указываем, что это новое нажатие
-        if (eventInfo.touches[1]) this.touchID -= 1; // отменяем нажатие, если это второй палец
     }
 
 
@@ -310,9 +338,11 @@ class UserInputToolResolver{
             this.twoTouchWrapper = newTwoTouchWrapper;
     
             // изменяем масштаб, 1 - на сколько изменяем, 2,3 - координаты центра к которому приблежать
-            // TODO - не знаю что за магическое число 15. Скорее всего оно подобрано с учетом того числа, которое отправляет колесико
-            // TODO - передалать на событие, сейчас это не работает
-            !.setMapScale(-changeScale / 15, newTwoTouchWrapper.twoTouchCenter.x, newTwoTouchWrapper.twoTouchCenter.y); 
+            // TODO - не знаю что за магическое число 15. Скорее всего оно подобрано с учетом того числа, которое отправляет колесико 
+            let setMapScaleEventInfo = new SetScaleEventInfo();
+            setMapScaleEventInfo.scaleTarget = new X_Y(newTwoTouchWrapper.twoTouchCenter.x, newTwoTouchWrapper.twoTouchCenter.y);
+            setMapScaleEventInfo.scaleValue = -changeScale / 15;
+            this.setMapScaleEvent.invoke(setMapScaleEventInfo);
     
         } else { // если палец всего один, то это перемещение камеры по карте (скроллинг)
 
@@ -322,11 +352,12 @@ class UserInputToolResolver{
                 this.startCoordinates = new X_Y(offsetCoordinates.x, offsetCoordinates.y)
             }
     
-            // TODO вызываем событие перемещения камеры
-            setCamera(
-                camera.x - (startXY[0] - event.touches[0].pageX),  // изменяем положение камеры, чтобы перемещаться по карте
-                camera.y - (startXY[1] - event.touches[0].pageY));// изменяем положение камеры, чтобы перемещаться по карте 
-                
+            // вызываем событие перемещения камеры
+            let setScrollMapEventInfo = new SetScrollMapEventInfo();
+            setScrollMapEventInfo.scroll = new Size(-(this.startCoordinates.x - offsetCoordinates.x), 
+                                                    -(this.startCoordinates.y - offsetCoordinates.y));
+            this.setScrollMapEvent.invoke(setScrollMapEventInfo);
+            
             this.oldTouchID = this.touchID;
             this.startCoordinates = new X_Y(offsetCoordinates.x, offsetCoordinates.y)
         }
@@ -340,33 +371,28 @@ class UserInputToolResolver{
         eventInfo.returnValue = false;
     }
 
-
-    public canvasOnMouseUp(eventInfo: MouseEvent | TouchEvent){
+    /** если отжали мышь или палец */
+    public canvasOnClickUp(eventInfo: MouseEvent | TouchEvent){
         this.startCoordinates = null;
         this.oldTouchID = this.touchID;
 
-        // TODO не ясно зачем меняли и почему сейчас заменяем на canvasOnMouseMove. В canvasOnMouseDown есть альтертаива
-        if (event.pageX) { // если подняли мышь (а не палец от сенсера)
-            engineController.privateHolder.canvasHTML.onmousemove = oldOnmousemove ? oldOnmousemove : canvasOnMouseMove; // возвращаем что было раньше при движении мыши, пока она не зажата
+        // если подняли мышь (а не палец от сенсера)
+        if (eventInfo instanceof MouseEvent) {
+            this.isCanvasOnMouseDown = false;
         }
     }
 
 
     public canvasOnMouseDown(eventInfo: MouseEvent){
-        mouseDownCamera[0] = camera.x;
-        mouseDownCamera[1] = camera.y;
+        // this.touchID инкрементится в canvasOnClick т.к. он тоже одновременно срабатывает
+
+        this.mouseDownCamera = new X_Y(this.engine.render.camera.coordinates.x, this.engine.render.camera.coordinates.y) // TODO неуверен, что это тут надо, затестить
     
-        if (startXY === null) startXY = [event.pageX, event.pageY]; // то, сколько пикселей добавлять при скроллинге
-    
-        oldOnmousemove = engineController.privateHolder.canvasHTML.onmousemove ? engineController.privateHolder.canvasHTML.onmousemove : canvasOnMouseMove; // сохраняем что было раньше при движении мыши, пока она не зажата
-    
-        // TODO как альтернатива этой хрени сделать флаг и в зависимости от него будет разное поведение
-        engineController.privateHolder.canvasHTML.onmousemove = function (event) { // указываем что делать при движении мыши пока она зажата
-            setCamera(
-                camera.x - (startXY[0] - event.pageX),    // изменяем положение камеры, чтобы перемещаться по карте
-                camera.y - (startXY[1] - event.pageY));   // изменяем положение камеры, чтобы перемещаться по карте
-            startXY = [event.pageX, event.pageY];
-        };
+        // указываем начальную координату при скроллинге, чтобы знать в какую сторону отведут мышь в следующий момент времени
+        if (this.startCoordinates === null) 
+            this.startCoordinates = new X_Y(eventInfo.offsetX, eventInfo.offsetY); 
+
+        this.isCanvasOnMouseDown = true;
     }
 
 
@@ -375,9 +401,10 @@ class UserInputToolResolver{
 
         var wDelta = -eventInfo.detail / 3; // значение на сколько покрутилось колесо
 
-        // TODO заменить на событие
-        setMapScale(wDelta, event.pageX, event.pageY);
-
+        let setMapScaleEventInfo = new SetScaleEventInfo();
+        setMapScaleEventInfo.scaleTarget = new X_Y(eventInfo.offsetX, eventInfo.offsetY);
+        setMapScaleEventInfo.scaleValue = wDelta;
+        this.setMapScaleEvent.invoke(setMapScaleEventInfo);
 
         // и заботимся о том, чтобы прокручивание колесика над элементом, не прокручивала скроллы страницы или еще что
         if (event.preventDefault) {
@@ -413,11 +440,93 @@ class TwoTouchWrapper{
 
 /** событие связанное с мышью обработанное движком после обработки браузером */
 export interface EngineMouseEvent {
-    (eventInfo: MouseEvent): void;
+    (eventInfo: EngineMouseEventInfo): void;
+}
+/** информация о событии связанное с мышью обработанное движком после обработки браузером */
+export class EngineMouseEventInfo{
+    /** информация о событии мыши */
+    public mouseEventInfo: MouseEvent;
+    /** какой спрайт находится в указанных координатах и "примет на себя" это событие */
+    public sprite: Sprite;
+}
+
+/** событие уведомляющее о необходимости изменить масштаб карты */
+export interface SetScaleEvent {
+    (eventInfo: SetScaleEventInfo): void;
+}
+/** информация о событии уведомляющее о необходимости изменить масштаб карты */
+export class SetScaleEventInfo{
+    /** то на сколько поменять масштаб карты */
+    public scaleValue: number;
+    /** "центр" к которому приближать или от которого отдалять */
+    public scaleTarget: X_Y;
+}
+
+/** событие о необходимости проскролить карту */
+export interface SetScrollMapEvent {
+    (eventInfo: SetScrollMapEventInfo): void;
+}
+/** информация по событию о необходимости проскролить карту */
+export class SetScrollMapEventInfo {
+    /** то на сколько проскролить карту относительно текущего положения */
+    public scroll: Size;
 }
 
 /** реагирует на распознанные команды пользователя (а распознает UserInputToolResolver) */
-class UserInputController{
-// вызываем функцию, которая должна срабатывать при наведении мыши на данный спрайт
-// вызываем функцию, которая должна срабатывать при клике мыши\пальца на данный спрайт
+export class UserInputController{
+
+    /** можно ли движением мыши менять положение камеры (изменять ее координаты) */
+    public mouseScrollingEnable: boolean = true;
+    /** можно ли изменять масштаб карты колесиком мыши или двумя пальцами */
+    public touchOrWheelMapScalingEnable: boolean = true;
+    /** можно ли изменять положение камеры (изменять ее координаты) при масштабировании */
+    public scrollinWithScalingEnable: boolean = true;
+    /** реагироавть ли как-либо на клик мышью\пальцем (то есть если нажали на спрайт, то вызывается ф-я предназначенная для этого спрайта) */
+    public clickReactionEnable: boolean = true;
+    /** реагироавть ли как-либо на наведение мышью (то есть если нажали на спрайт, то вызывается ф-я предназначенная для этого спрайта) */
+    public mouseMoveReactionEnable: boolean = true;
+
+    /** Конструктор класса - отвечающего за реагирцию на распознанные команды пользователя (а распознает UserInputToolResolver)
+    * @constructor
+    * @param engine - доступ к главному центральному части движка
+    */
+    constructor(private engine: Engine,
+                userInputToolResolver: UserInputToolResolver) {
+
+        // подписываемся на все события UserInputToolResolver, чтобы на них реагировать
+        userInputToolResolver.engineOnMouseClickEvent.addSubscriber(this.engineOnMouseClickEventHandler);
+        userInputToolResolver.engineOnMouseMoveEvent.addSubscriber(this.engineOnMouseMoveEventHandler);
+        userInputToolResolver.setMapScaleEvent.addSubscriber(this.setMapScaleEventHandler);
+        userInputToolResolver.setScrollMapEvent.addSubscriber(this.setScrollMapEventHandler);
+    }
+
+    public engineOnMouseClickEventHandler(eventInfo: EngineMouseEventInfo){
+        // вызываем функцию, которая должна срабатывать при нажатии на данный спрайт
+        if(this.clickReactionEnable) eventInfo.sprite?.mouseClickEvent(eventInfo.mouseEventInfo);
+    }
+
+    public engineOnMouseMoveEventHandler(eventInfo: EngineMouseEventInfo){
+        // вызываем функцию, которая должна срабатывать при наведении на данный спрайт
+        if(this.mouseMoveReactionEnable) eventInfo.sprite?.mouseMoveEvent(eventInfo.mouseEventInfo);
+    }
+
+    public setMapScaleEventHandler(eventInfo: SetScaleEventInfo){
+        // изменяем масштаб карты
+        if(this.touchOrWheelMapScalingEnable && this.scrollinWithScalingEnable) {
+            this.engine.render.camera.setScaleMap(eventInfo.scaleValue, eventInfo.scaleTarget);
+        }
+        if(this.touchOrWheelMapScalingEnable && this.scrollinWithScalingEnable === false){
+            this.engine.render.camera.setScaleMap(eventInfo.scaleValue, null);
+        }
+    }
+
+    public setScrollMapEventHandler(eventInfo: SetScrollMapEventInfo){
+        if(this.mouseScrollingEnable){
+            let cameraCoord = this.engine.render.camera.coordinates;
+
+            // скроллим карту (перемещаемся по ней)
+            cameraCoord.setNewValues(cameraCoord.x + eventInfo.scroll.width, cameraCoord.y + eventInfo.scroll.height);
+        }
+    }
+
 }
