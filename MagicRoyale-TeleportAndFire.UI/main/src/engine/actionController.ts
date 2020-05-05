@@ -14,7 +14,7 @@ export class ActionController{
      * пользователь хотел сделать (какую конкретно команду вызывать. Пример: переместить что-то зажав мышь или сделать скролл экрана) */
     public get userInputToolResolver(): UserInputToolResolver{return this._userInputToolResolver};
     /** событие, что движок закончил отрабатывать логику всех действий в текущем такте, но еще не приступил к отрисовке */
-    public frameRenderedEvent = new EventDistributor();
+    public logicExecutedEvent = new EventDistributor();
 
     // Приватные поля
     private _loopWorker: LoopWorker;
@@ -53,6 +53,8 @@ export class ActionController{
         this.engine.spriteHolder.sprites.forEach(sprite =>{
             sprite.functionsInGameLoop.invoke(sprite);
         })
+
+        this.logicExecutedEvent.invoke();
 
         // вызов отрисовки кадра в самом конце
         this.engine.render.renderFrame(this.engine.spriteHolder.sprites.toArray());

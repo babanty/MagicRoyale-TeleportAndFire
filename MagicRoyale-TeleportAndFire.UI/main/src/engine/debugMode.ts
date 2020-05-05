@@ -57,11 +57,11 @@ export class DebugMode{
 
     // для просчета fps
     private engineTaktsCounter: number = 0;
-    private drowCounter: number = 0;
+    private frameCounter: number = 0;
     private engineTaktsSubscribeId: Guid;
-    private drowCounterSubscribeId: Guid;
+    private drawCounterSubscribeId: Guid;
     private engineTaktsTimerId: NodeJS.Timeout;
-    private drowCounterTimerId: NodeJS.Timeout;
+    private drawCounterTimerId: NodeJS.Timeout;
     private engineTaktsPs: number = 0;
     private drowFps: number = 0;
 
@@ -133,17 +133,23 @@ export class DebugMode{
         this.onSpriteTouchSubscribeId = this.engine.actionController.userInputToolResolver.engineOnClickEvent.addSubscriber((event) => 
                                                             this.debugInfoLines[4] = event.sprite.id.toString())
 
-        // TODO - расчет фпс движка
-        // подписываемся на событие, что "логика рассчитана"
-        engineTaktsSubscribeId
+        // Расчет фпс движка
+        // подписываемся на событие, что "логика рассчитана" в actionController
+        this.engineTaktsSubscribeId = this.engine.actionController.logicExecutedEvent.addSubscriber(() => this.engineTaktsCounter++);
         // создаем таймер, который сбрасывает счетчик каждую секунду
-        engineTaktsTimerId
+        this.engineTaktsTimerId = setInterval(() => {
+            this.engineTaktsPs = this.engineTaktsCounter;
+            this.engineTaktsCounter = 0;
+        }, 1000);
 
-        // TODO - расчет фпс картинки
-        // подписываемся на событие, что "логика рассчитана"
-        drowCounterSubscribeId
+        // Расчет фпс картинки
+        // подписываемся на событие, что "кадр отрисован" в render
+        this.drawCounterSubscribeId = this.engine.render.frameRenderedEvent.addSubscriber(() => this.frameCounter++)
         // создаем таймер, который сбрасывает счетчик каждую секунду
-        drowCounterTimerId
+        this.drawCounterTimerId = setInterval(() => {
+            this.drowFps = this.engineTaktsCounter;
+            this.frameCounter = 0;
+        }, 1000);
 
         // подписаться на событие от рендера, что он отрисовал кадр и прорисовать дебаг инфу поверх
         this.frameRenderedSubscribeId = this.engine.render.frameRenderedEvent.addSubscriber(() => this.updateDebugInfo);
@@ -165,12 +171,12 @@ export class DebugMode{
 
         this.engine.render.frameRenderedEvent.deleteSubscriber(this.frameRenderedSubscribeId);
 
-        engineTaktsSubscribeId
-        drowCounterSubscribeId
+        this.engine.actionController.logicExecutedEvent.deleteSubscriber(this.engineTaktsSubscribeId);
+        this.engine.render.frameRenderedEvent.deleteSubscriber(this.drawCounterSubscribeId);
 
         if(this.updateTimerId) clearTimeout(this.updateTimerId);
         if(this.engineTaktsTimerId) clearTimeout(this.engineTaktsTimerId);
-        if(this.drowCounterTimerId) clearTimeout(this.drowCounterTimerId);
+        if(this.drawCounterTimerId) clearTimeout(this.drawCounterTimerId);
     }
 
     private displayDebugInfo(){
