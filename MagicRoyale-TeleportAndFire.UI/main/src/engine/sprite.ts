@@ -21,7 +21,7 @@ export class Sprite{
 
     // Необязательные поля
     /** координаты объекта */
-    public get coordinates(): X_Y{return this._coordinates}; // TODO пробежаться по коду, посмотреть везде ли стоят проверки на null
+    public get coordinates(): X_Y{return this._coordinates};
     /** градус на сколько повернуть изображение */ 
     public rotate: number = 0;
     /** статичные ли у него координаты? Нужно для взаимодействия с камерой. Если статичные, то на изменение масштаба и перемещения камеры реагировать не будет */
@@ -31,7 +31,7 @@ export class Sprite{
     /** пропускать ли нажатие. Может отрисовываться выше всех по слою, но при нажатии пропускает клик и отдаем ему того кто ниже */
     public isSkipClick: boolean = false;
     /** геометрическая фигура, нужна для обработки событий мыши. По умолчанию прямоугольник */
-    public figure: MaskFigure = MaskFigure.rectangle;
+    public figure: MaskFigure;
     /** вектор перемещения. Если он задается, то каждый так спрайт изменяет свою координату */
     public get vector(): MovingVector{return this._vector};
     /** просто сюда можно добавить какой-то текст\объект и т.д. по необходимости для личных нужд. На работу движка это поле не влияет */
@@ -41,8 +41,8 @@ export class Sprite{
     /** смещение (отклонение) реальной картинки от маски. То есть обработка нажатий на маску и реально отрисовываемая 
      *  картинка могут быть в разных местах.
      *  Это костыль на случай, если лень нормально вырезать в пеинте картинку, чтобы она правильно ложилась на маску */
-    public offsetPic: X_Y;
-    /** заполнив это поле вы сделаете картинку спрайта анимацией */
+    public offsetPic: X_Y = new X_Y(0, 0);
+    /** [canBeNull] заполнив это поле вы сделаете картинку спрайта анимацией */
     public animation: SpriteAnimation;
 
     // События
@@ -72,11 +72,19 @@ export class Sprite{
     /** Конструктор класса игрового объекта на карте
      * @constructor
      * @param id - id. Желательно должен соотвествовать тому, что лежит на сервере
-     * @param layer -слой на котором производится отрисовка
+     * @param image - картинка спрайта
+     * @param isHidden - спрятан ли спрайт (виден ли он и реагирует ли он на пересечения и нажатия)
      */
-    public constructor(id: Guid, layer: number = 0) {
+    public constructor(id: Guid, image: HTMLImageElement, isHidden = true) {
+        if(!id) throw new Error("sprite.id can't be null");
+        if(!image) throw new Error("sprite.image can't be null. You can set some stub.");
+
         this.id = id;
-        this.layer = layer;
+        this.layer = 0;
+        this.coordinates = new X_Y(0, 0);
+        this.setImage(image, 0, MaskFigure.rectangle);
+        this.picSize = new Size(image.width, image.height);
+        this.isHidden = isHidden;
     }
 
 

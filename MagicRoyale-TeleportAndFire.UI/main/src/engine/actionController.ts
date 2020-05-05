@@ -65,9 +65,6 @@ export class ActionController{
 
         // распознает что хотел сделать пользователь
         this._userInputToolResolver = new UserInputToolResolver(this.engine);
-        // TODO [NotImpl] - сейчас мы только отправляем события resolver-у, но при этом у нас должена быть переменная для прочих подписчиков
-        // 1111 - canvasOnMouseMove
-        // 1273 - стандартные обработчики
 
         let canvas = this.engine.canvas;
 

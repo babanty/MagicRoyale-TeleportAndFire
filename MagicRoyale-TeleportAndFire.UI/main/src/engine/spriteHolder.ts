@@ -32,22 +32,24 @@ export class SpriteHolder{
     }
 
 
-    /** создать спрайт на карте, у которого еще не загружена картинка с загрузкой картинки. Если не удалось загрузить картинку - вернет null*/
+    /** создать спрайт на карте, у которого еще не загружена картинка с загрузкой картинки. 
+     * Если не удалось загрузить картинку выкинет Error*/
     public createSprite(id: Guid, config: PictureConfig) : Sprite{
         // валидаия аргументов
-        if(!id || !config) return null;
-
-        let sprite = new Sprite(id);
+        if(!config) throw new Error("config: PictureConfig can't be null.");
 
         // выкачиваем картинку с сервера
-        let image = this.getPicture(config.srcPath) // пробуем выкачать их кеша
+        let image = this.getPicture(config.srcPath) // пробуем выкачать из кеша
 
         if(!image){ // в кеше картинки не оказалось
             image = this.downloadAndCachePicture(config, 10000); // загружаем картинку с нуля
-            if(image == null) return null; // не удалось загрузить в течении отведенного времени
+            if(image == null) throw new Error("Image upload failed."); // не удалось загрузить в течении отведенного времени
         }
         
-        // устанавливаем спрайту картинку
+        let sprite = new Sprite(id, image);
+        sprite.scale = config.scale;
+        sprite.figure = config.figure;
+
         sprite.setImage(image, config.scale, config.figure);
 
         // добавляем спрайт в коллекцию объектов держателю объектов

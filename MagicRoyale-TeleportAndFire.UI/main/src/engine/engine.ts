@@ -42,9 +42,9 @@ export class Engine{
     constructor(parrentElement: HTMLElement) {
         this._canvas = new Canvas(parrentElement, true);
         this._spriteHolder = new SpriteHolder(this);
-        let camera = new Camera(new X_Y(0, 0), 1);
+        let camera = new Camera(this.canvas, new X_Y(0, 0), 1);
         this._render = new Render(this._canvas.canvasElement, camera);
-        this._debugMode = new DebugMode();
+        this._debugMode = new DebugMode(this);
         this._actionController = new ActionController(this);
     }
 
