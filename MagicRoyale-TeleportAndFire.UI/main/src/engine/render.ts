@@ -1,7 +1,7 @@
 import { Sprite, MaskFigure } from "./sprite";
 import { Camera } from "./camera";
 import { Guid } from "guid-typescript";
-import { X_Y } from "./common";
+import { X_Y, EventDistributor } from "./common";
 
 /** класс отвечающий за "отрисовку" на канвасе объектов */
 export class Render{
@@ -11,6 +11,14 @@ export class Render{
     public get canvasElement(): HTMLCanvasElement{return this._canvasElement};
     /** класс отвечающий за камеру (глаза игрока) в игре */
     public get camera(): Camera{return this._camera};
+    /** событие, что движок начал отрисовывать кадр */
+    public frameRenderStartedEvent = new EventDistributor();
+    /** событие, что движок начал отрисовывать спрайты в кадре. Подписчики могут что-то успеть сделать перед этим отрисовкой спрайтов */
+    public spritesInFrameRenderStartedEvent = new EventDistributor();
+    /** событие, что движок закончил отрисовывать кадр */
+    public frameRenderedEvent = new EventDistributor();
+    /** сохраненные картинки, которые отрисовываются перед отрисовкой спрайтов */
+    public savedPictures = new Map<Guid, SpriteWrapper>();
     
 
     // Приватные поля
@@ -59,8 +67,6 @@ export class Render{
      *  - поддерживает смещение (sprite.offsetPic)
     */
     public renderSprites(sprites: Sprite[]){
-
-        this.clearCanvas() // очищаем холст
         
         // очищаем от спрайтов, которые не нужно рисовать (например, у которых стоит isHidden === true)
         let clearedSprites = this.clearSrpites(sprites);
@@ -78,23 +84,70 @@ export class Render{
         for(let sprite of sortedSpriteWrappers){
             this.drawSrpiteWrapperOnCanvas(sprite);
         }
+
+        
     }
 
+    /** отрисовать кадр:
+     * 1. затирает предыдущий кадр
+     * 2. рисует те картинки, что лежат тут в savedPictures
+     * 3. рисует те спрайты, что сюда передали
+     */
+    public renderFrame(sprites: Sprite[]){
+        this.clearCanvas() // очищаем холст
 
-    /** отрисовать статические картинки, например фон.
+        this.frameRenderStartedEvent.invoke(); // указываем что начался отрисовываться кадр
+
+        // отрисовываем все картинки
+        for (let pic of this.savedPictures.values()) {
+            this.drawSrpiteWrapperOnCanvas(pic);
+        }
+
+        this.spritesInFrameRenderStartedEvent.invoke();
+        this.renderSprites(sprites); // отрисовываем спрайты
+
+        this.frameRenderedEvent.invoke; // указываем, что кадр отрисован
+    }
+
+    /** Добавить картинку, например фон. Может реагировать на изменение масштаба и скорллинг, но не реагирует на клик, 
+     * пересечение и проч. Возращает id картинки из this.savedPictures
+     * - "добавленные" картинки рисуются перед тем как будут нарисованы спрайты т.к. у них нет слоя. Если надо отрисовать после, то
+     * можно, например по событию spritesRenderedEvent вызывать метод renderPictures
+     * - картинки требуют значительно меньше ресурсов (тактов процессора), нежели чем спрайты, но они "тупые"
      * @param picture - собственно картинка, которую нужно отрисовать. Важно, она тут 
-     *                  не кешируется (в отличие от картинок спрайтов)
+     *                  не кешируется (в отличие от картинок спрайтов). 
+     *                  Вы можете воспользоваться методом spriteHolder.downloadAndCachePicture для загрузки картинок с сервера
      * @param x - x - координата, где рисовать
      * @param y - y - координата, где рисовать
+     * @param isStatic - статическая ли картинка, т.е. если true, то она будет прибита к экрану; если false - то будет реагировать на масштаб и камеру
      * @param width - (необзятельно) - какой ширины нарисовать картинку. Если не указано, то берется ширина оригинальной картинки
      * @param height - (необзятельно) - какой высоты нарисовать картинку. Если не указано, то берется ширина оригинальной картинки
     */
-    public renderStaticPicture(picture: HTMLImageElement, x: number, y: number, 
-                                    width: number = null, height: number = null){
-        this.canvasContext.drawImage(picture, x, y, 
-                                    width ? width : picture.width, 
-                                    height ? height : picture.height)
-    }
+    public addPicture(picture: HTMLImageElement, x: number, y: number, isStatic: boolean = false,
+                                    width: number = null, height: number = null) : Guid {
+        let wrapper = new SpriteWrapper();
+        wrapper.spriteId = Guid.create();
+        wrapper.layer = 0;
+        wrapper.picture = picture;
+        wrapper.rotate = 0;
+        wrapper.width = width ? width : picture.width;
+        wrapper.height = height ? height : picture.height;
+        wrapper.x = x;
+        wrapper.y = x;
+
+        // ширина и высота и координаты учитывают масштаб карты и камеру
+        if(!isStatic){ // на статические спрайты не распространяется
+            let gameCoordinates = this.gameCoordinatesToAbsoluteCoordinates(new X_Y(x, y));
+            wrapper.x = gameCoordinates.x;
+            wrapper.y = gameCoordinates.y;
+
+            wrapper.width *= this.camera.scaleMap;
+            wrapper.height *= this.camera.scaleMap;
+        }
+
+        this.savedPictures.set(wrapper.spriteId, wrapper);
+        return wrapper.spriteId;
+    }    
 
 
     /** Замостить фон некоторой картинкой (желательно безшовной) */
@@ -132,6 +185,16 @@ export class Render{
         y = y * this.camera.scaleMap;
 
         return new X_Y(x, y);
+    }
+
+    /** игровые координаты (например те что у спрайта) в абсолютные координаты (относительно левого верхнего угла канваса) */
+    public gameCoordinatesToAbsoluteCoordinates(gameCoordinates: X_Y) : X_Y{
+        // умножаем координаты спрайта на масштаб;
+        // умножаем координаты камеры на масштаб;
+        // смещаем координаты на положение камеры
+        return new X_Y(
+                (gameCoordinates.x * this.camera.scaleMap) + (this.camera.coordinates.x  * this.camera.scaleMap),
+                (gameCoordinates.y * this.camera.scaleMap) + (this.camera.coordinates.y  * this.camera.scaleMap));
     }
 
     /** пересчитать длину отрезка (например ширину спрайта) на ту реальную длину в пикселях, которую будет отрисовывать рендериг
@@ -225,14 +288,11 @@ export class Render{
         result.y = result.y + sprite.offsetPic.y;
 
         // учитываем параметры камеры
-        if(sprite.isStaticCoordinates !== true){ // на статические спрайты не распространяется
-            // умножаем координаты спрайта на масштаб;
-            // умножаем координаты камеры на масштаб;
-            // смещаем координаты на положение камеры
-            result.x = (result.x * this.camera.scaleMap) + (this.camera.coordinates.x  * this.camera.scaleMap)
-            result.y = (result.y * this.camera.scaleMap) + (this.camera.coordinates.y  * this.camera.scaleMap)
+        if(!sprite.isStaticCoordinates){ // на статические спрайты не распространяется
+            let gameCoordinates = this.gameCoordinatesToAbsoluteCoordinates(new X_Y(result.x,result.y));
+            result.x = gameCoordinates.x
+            result.y = gameCoordinates.y
         }
-
 
         return result;
     }

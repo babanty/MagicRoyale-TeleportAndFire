@@ -10,7 +10,11 @@ export class ActionController{
     public get loopWorker(): LoopWorker{return this._loopWorker};
     /** реагирует на распознанные команды пользователя (а распознает UserInputToolResolver) */
     public get userInputController(): UserInputController{return this._userInputController};
-
+    /** реагирует на ввод пользователя через разные устройства (мышь, клавиатура, сенсорный экран) и понимает что 
+     * пользователь хотел сделать (какую конкретно команду вызывать. Пример: переместить что-то зажав мышь или сделать скролл экрана) */
+    public get userInputToolResolver(): UserInputToolResolver{return this._userInputToolResolver};
+    /** событие, что движок закончил отрабатывать логику всех действий в текущем такте, но еще не приступил к отрисовке */
+    public frameRenderedEvent = new EventDistributor();
 
     // Приватные поля
     private _loopWorker: LoopWorker;
@@ -50,8 +54,8 @@ export class ActionController{
             sprite.functionsInGameLoop.invoke(sprite);
         })
 
-        // вызов отрисовки всех спрайтов в самом конце
-        this.engine.render.renderSprites(this.engine.spriteHolder.sprites.toArray());
+        // вызов отрисовки кадра в самом конце
+        this.engine.render.renderFrame(this.engine.spriteHolder.sprites.toArray());
     }
 
     /** инициализиуруем обработчики событий, например событий клика мыши */ 
@@ -63,33 +67,47 @@ export class ActionController{
         // 1111 - canvasOnMouseMove
         // 1273 - стандартные обработчики
 
-        this.engine.canvas.canvasElement.onclick = this._userInputToolResolver.canvasOnClick;
-        this.engine.canvas.canvasElement.onmousemove = this._userInputToolResolver.canvasOnMouseMove;
+        let canvas = this.engine.canvas;
+
+        canvas.onclick.addSubscriber(this._userInputToolResolver.canvasOnClick);
+        canvas.canvasElement.onclick = (event) => canvas.onclick.invoke(event);
+
+        canvas.onmousemove.addSubscriber(this._userInputToolResolver.canvasOnMouseMove);
+        canvas.canvasElement.onmousemove = (event) => canvas.onmousemove.invoke(event);
 
         // указываем что делать если зажали экран телефона
-        this.engine.canvas.canvasElement.addEventListener("touchstart", this._userInputToolResolver.canvasOnTouchStart, false);
+        canvas.touchstart.addSubscriber(this._userInputToolResolver.canvasOnTouchStart);
+        canvas.canvasElement.addEventListener("touchstart", (event) => canvas.touchstart.invoke(event), false);
+
         // указываем что делать если водят пальцем по экрану
-        this.engine.canvas.canvasElement.addEventListener("touchmove", this._userInputToolResolver.canvasOnTouchMove, false);
+        canvas.touchmove.addSubscriber(this._userInputToolResolver.canvasOnTouchMove);
+        canvas.canvasElement.addEventListener("touchmove", (event) => canvas.touchmove.invoke(event), false);
+
         // указываем что делать если отжали палец от экрана телефона
-        this.engine.canvas.canvasElement.addEventListener("touchend", this._userInputToolResolver.canvasOnClickUp, false);
-        this.engine.canvas.canvasElement.addEventListener("touchcancel", this._userInputToolResolver.canvasOnClickUp, false);
+        canvas.touchend.addSubscriber(this._userInputToolResolver.canvasOnClickUp);
+        canvas.canvasElement.addEventListener("touchend", (event) => canvas.touchend.invoke(event), false);
+        canvas.touchcancel.addSubscriber(this._userInputToolResolver.canvasOnClickUp);
+        canvas.canvasElement.addEventListener("touchcancel", (event) => canvas.touchcancel.invoke(event), false);
 
         // указываем что делать если зажали мышь
-        this.engine.canvas.canvasElement.onmousedown = this._userInputToolResolver.canvasOnMouseDown;
+        canvas.onmousedown.addSubscriber(this._userInputToolResolver.canvasOnMouseDown);
+        canvas.canvasElement.onmousedown = (event) => canvas.onmousedown.invoke(event);
+
         // указываем что делать если отжали мышь
-        this.engine.canvas.canvasElement.onmouseup = this._userInputToolResolver.canvasOnClickUp;
-        this.engine.canvas.canvasElement.onmouseout = this._userInputToolResolver.canvasOnClickUp;
+        canvas.onmouseup.addSubscriber(this._userInputToolResolver.canvasOnClickUp);
+        canvas.canvasElement.onmouseup = (event) => canvas.onmouseup.invoke(event);
+        canvas.onmouseout.addSubscriber(this._userInputToolResolver.canvasOnClickUp);
+        canvas.canvasElement.onmouseout = (event) => canvas.onmouseout.invoke(event);
     
         // реакция на колесико мыши, масштабирование карты WheelEvent
-        this.engine.canvas.canvasElement.onwheel = this._userInputToolResolver.canvasOnWeelMouse;
+        canvas.onwheel.addSubscriber(this._userInputToolResolver.canvasOnWeelMouse);
+        canvas.canvasElement.onwheel = (event) => canvas.onwheel.invoke(event);
 
         // указываем, кто будет обрабатывать все эти события с мыши\тача
         this._userInputController = new UserInputController(this.engine, this._userInputToolResolver);
 
         // Обработка событий пересечения
         this.intersectionEventInitialization();
-        
-        // TODO - решить где будут флаги отключающие изменение расположения камеры\масштаба. Скорее всего в engine.configs или в камере. реализовать это
     }
 
     /** отдельно вынесеная логика создания события перересечения спрайтов */
@@ -230,14 +248,13 @@ class UserInputToolResolver{
     /** событие навели мышь на указанные координаты */
     public engineOnMouseMoveEvent = new EventDistributorWithInfo<EngineMouseEvent, EngineMouseEventInfo>();
     /** событие кликнули мышью\палецем на указанные координаты (+ указать на какой спрайт попали или null) */
-    public engineOnMouseClickEvent = new EventDistributorWithInfo<EngineMouseEvent, EngineMouseEventInfo>();
+    public engineOnClickEvent = new EventDistributorWithInfo<EngineMouseEvent, EngineMouseEventInfo>();
     /** событие о необходимости изменить масштаб */
     public setMapScaleEvent = new EventDistributorWithInfo<SetScaleEvent, SetScaleEventInfo>();
     /** событие о необходимости проскролить карту */
     public setScrollMapEvent = new EventDistributorWithInfo<SetScrollMapEvent, SetScrollMapEventInfo>();
 
-    /** расположение камеры в момент нажатия мыши TODO - оно надо? проверить ссылки*/
-    private mouseDownCamera: X_Y;
+
     /** актуальный номер нажатия. Инкрементируется сразу в момент нажатия.
      *  Нажатие второго пальца не считается и не инкременирует переменную*/
     private touchID: number;
@@ -314,7 +331,6 @@ class UserInputToolResolver{
 
     public canvasOnTouchMove(eventInfo: TouchEvent){
         // для различия зажатия и клика мыши
-        this.mouseDownCamera = new X_Y(this.engine.render.camera.coordinates.x, this.engine.render.camera.coordinates.y) // TODO неуверен, что это тут надо, затестить
     
         let offsetCoordinates = getOffsetValues(eventInfo, this.engine.canvas.canvasElement, 0);
 
@@ -384,9 +400,7 @@ class UserInputToolResolver{
 
 
     public canvasOnMouseDown(eventInfo: MouseEvent){
-        // this.touchID инкрементится в canvasOnClick т.к. он тоже одновременно срабатывает
-
-        this.mouseDownCamera = new X_Y(this.engine.render.camera.coordinates.x, this.engine.render.camera.coordinates.y) // TODO неуверен, что это тут надо, затестить
+        // TODO точно ли? - this.touchID инкрементится в canvasOnClick т.к. он тоже одновременно срабатывает 
     
         // указываем начальную координату при скроллинге, чтобы знать в какую сторону отведут мышь в следующий момент времени
         if (this.startCoordinates === null) 
@@ -494,7 +508,7 @@ export class UserInputController{
                 userInputToolResolver: UserInputToolResolver) {
 
         // подписываемся на все события UserInputToolResolver, чтобы на них реагировать
-        userInputToolResolver.engineOnMouseClickEvent.addSubscriber(this.engineOnMouseClickEventHandler);
+        userInputToolResolver.engineOnClickEvent.addSubscriber(this.engineOnMouseClickEventHandler);
         userInputToolResolver.engineOnMouseMoveEvent.addSubscriber(this.engineOnMouseMoveEventHandler);
         userInputToolResolver.setMapScaleEvent.addSubscriber(this.setMapScaleEventHandler);
         userInputToolResolver.setScrollMapEvent.addSubscriber(this.setScrollMapEventHandler);

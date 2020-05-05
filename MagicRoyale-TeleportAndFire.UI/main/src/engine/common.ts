@@ -176,7 +176,7 @@ export class SizeChangedEventInfo{
     public oldValues: Size;
 }
 
-/** возвращает координаты отнсительно элемента на который нажали. Как offsetX\Y для MouseEvent-а  */
+/** возвращает координаты отнсительно html-элемента на который нажали. Как offsetX\Y для MouseEvent-а  */
 export function getOffsetValues(event: TouchEvent, element: HTMLElement, touchNum = 0) : X_Y {
     let rect = element.getBoundingClientRect();
     let bodyRect = document.body.getBoundingClientRect();
