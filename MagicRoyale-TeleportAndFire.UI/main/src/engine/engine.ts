@@ -3,6 +3,7 @@ import { Canvas } from "./canvas";
 import { Render } from "./render";
 import { DebugMode } from "./debugMode";
 import { SpriteHolder } from "./spriteHolder";
+import { EventDistributorWithInfo } from "./common";
 import { Camera } from "./camera";
 import { X_Y } from "./common";
 
@@ -44,8 +45,8 @@ export class Engine{
         this._spriteHolder = new SpriteHolder(this);
         let camera = new Camera(this.canvas, new X_Y(0, 0), 1);
         this._render = new Render(this._canvas.canvasElement, camera);
-        this._debugMode = new DebugMode(this);
         this._actionController = new ActionController(this);
+        this._debugMode = new DebugMode(this);
     }
 
     // TODO сделать конструктор принимающий уже готовый канвас, а так же придумть как делать возможность настраивать канвас разного размера

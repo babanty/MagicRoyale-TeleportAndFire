@@ -344,7 +344,7 @@ class UserInputToolResolver{
             // насколько изменилось расстояние между пальцами, на плюс или минус 
             let changeScale = 0;
 
-            if (touchID === this.twoTouchWrapper.touchID) { // если это продолжение нажатия двумя пальцами, которое началось в предыдущих событиях
+            if (this.touchID === this.twoTouchWrapper.touchID) { // если это продолжение нажатия двумя пальцами, которое началось в предыдущих событиях
                 changeScale = this.twoTouchWrapper.twoTouchDelta.width - newTwoTouchWrapper.twoTouchDelta.width
                                 + this.twoTouchWrapper.twoTouchDelta.height - newTwoTouchWrapper.twoTouchDelta.height; 
             }
@@ -412,7 +412,7 @@ class UserInputToolResolver{
     public canvasOnWeelMouse(eventInfo: WheelEvent){
         // http://old.ignatiev.su/blog/posts/mouse_wheel_javascript
 
-        var wDelta = -eventInfo.detail / 3; // значение на сколько покрутилось колесо
+        let wDelta = -eventInfo.detail / 3; // значение на сколько покрутилось колесо
 
         let setMapScaleEventInfo = new SetScaleEventInfo();
         setMapScaleEventInfo.scaleTarget = new X_Y(eventInfo.offsetX, eventInfo.offsetY);

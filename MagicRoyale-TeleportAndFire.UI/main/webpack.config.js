@@ -30,7 +30,7 @@ module.exports = {
                 to: pathLib.resolve(__dirname, 'ui_artefacts/images')
             }
         ]),
-        new CleanWebpackPlugin() // этот плагин, очищает выходную папку прежде чем в нее собрать новый билд
+        new CleanWebpackPlugin(), // этот плагин, очищает выходную папку прежде чем в нее собрать новый билд
     ],
     resolve: {
         extensions: ['.ts', '.js', '.css']
@@ -64,6 +64,9 @@ module.exports = {
                         presets:[ // подключаем стандартный пресет (кучка модулей отвечающих за переваривание синтаксиса)
                             '@babel/preset-env',
                             '@babel/preset-typescript'
+                        ],
+                        plugins: [
+                            "@babel/plugin-proposal-class-properties"
                         ]
                     }
                 }

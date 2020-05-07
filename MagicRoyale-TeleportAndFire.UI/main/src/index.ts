@@ -1,17 +1,17 @@
 // import Post from './Post' // заимпортить класс
 import './styles.css' 
 import './testBabel.ts'
-import { Engine } from "./engine/engine";
+import { Test1 } from './test1';
+//import { Engine } from "./engine/engine";
 
 function initialize() {
     let gameCanvasParrentElement = document.getElementById('gameContent');
-    let engine = new Engine(gameCanvasParrentElement);
+    //let engine = new Engine(gameCanvasParrentElement);
+    //engine.debugMode.debugModeEnable = true;
 
-    createSprites(engine);
-}
 
-function createSprites(engine: Engine){
-
+    let test1 = new Test1();
+    test1.WriteLol();
 }
 
 
