@@ -1,5 +1,5 @@
 import { Guid } from "guid-typescript";
-import { X_Y, EventDistributor, CoordinatesChangedEvent, CoordinatesChangedEventInfo, EventDistributorWithInfo, Size } from "./common";
+import { X_Y, EventDistributor, CoordinatesChangedEventInfo, EventDistributorWithInfo, Size } from "./common";
 
 /** Любой объект на игровой карте */
 export class Sprite{

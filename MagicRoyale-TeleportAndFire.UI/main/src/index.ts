@@ -2,12 +2,12 @@
 import './styles.css' 
 import './testBabel.ts'
 import { Test1 } from './test1';
-//import { Engine } from "./engine/engine";
+import { Engine } from "./engine/engine";
 
 function initialize() {
     let gameCanvasParrentElement = document.getElementById('gameContent');
-    //let engine = new Engine(gameCanvasParrentElement);
-    //engine.debugMode.debugModeEnable = true;
+    let engine = new Engine(gameCanvasParrentElement);
+    engine.debugMode.debugModeEnable = true;
 
 
     let test1 = new Test1();

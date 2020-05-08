@@ -1,5 +1,5 @@
 import { Sprite, MaskFigure } from "./sprite";
-import Collections = require('typescript-collections');
+import * as Collections from "typescript-collections";
 import {sleep, X_Y, EventDistributorWithInfo} from "./common";
 import { Guid } from "guid-typescript";
 import * as geometry from "./geometry";

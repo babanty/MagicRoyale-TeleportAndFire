@@ -3,7 +3,6 @@ import { Canvas } from "./canvas";
 import { Render } from "./render";
 import { DebugMode } from "./debugMode";
 import { SpriteHolder } from "./spriteHolder";
-import { EventDistributorWithInfo } from "./common";
 import { Camera } from "./camera";
 import { X_Y } from "./common";
 
