@@ -16,7 +16,7 @@ export class Camera{
         if(scaleMap < this.minScaleMap){ // если передали значение меньше минимального, то запишется минимальное
             this._scaleMap = this.minScaleMap;
         }else if(scaleMap >= this.minScaleMap){ // если передали больше минимального, то запишется как есть
-            this.scaleMap = scaleMap;
+            this._scaleMap = scaleMap;
         }
     }
     private _scaleMap: number;

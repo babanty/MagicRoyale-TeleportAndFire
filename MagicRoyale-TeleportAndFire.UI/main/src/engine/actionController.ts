@@ -15,6 +15,8 @@ export class ActionController{
     public get userInputToolResolver(): UserInputToolResolver{return this._userInputToolResolver};
     /** событие, что движок закончил отрабатывать логику всех действий в текущем такте, но еще не приступил к отрисовке */
     public logicExecutedEvent = new EventDistributor();
+    /** сюда можно добавить функции (действия) выполняющиеся в начале каждого шага (итерации) движка (60 раз в сек) */
+    public actionsAtEveryStep = new EventDistributor();
 
     // Приватные поля
     private _loopWorker: LoopWorker;
@@ -27,15 +29,12 @@ export class ActionController{
      * @param engine - доступ к главному центральному части движка
      */
     constructor(private engine: Engine) {
-
         // создаем класс, который вызывает главный шаг 60 раз в сек
-        this._loopWorker = new LoopWorker(this.mainStep);
+        this._loopWorker = new LoopWorker(this.mainStep.bind(this));
         this.eventsHandlersInitilization();
 
     }
 
-    /** сюда можно добавить функции (действия) выполняющиеся в начале каждого шага (итерации) движка (60 раз в сек) */
-    public actionsAtEveryStep = new EventDistributor();
 
     /** Действия, которы выполнятся при событии пересечения двух спрайтов. Отправляет функции-подписчику спрайты, 
      * которые пересеклись. 
@@ -68,38 +67,38 @@ export class ActionController{
 
         let canvas = this.engine.canvas;
 
-        canvas.onclick.addSubscriber(this._userInputToolResolver.canvasOnClick);
+        canvas.onclick.addSubscriber(this._userInputToolResolver.canvasOnClick.bind(this._userInputToolResolver));
         canvas.canvasElement.onclick = (event) => canvas.onclick.invoke(event);
 
-        canvas.onmousemove.addSubscriber(this._userInputToolResolver.canvasOnMouseMove);
+        canvas.onmousemove.addSubscriber(this._userInputToolResolver.canvasOnMouseMove.bind(this._userInputToolResolver));
         canvas.canvasElement.onmousemove = (event) => canvas.onmousemove.invoke(event);
 
         // указываем что делать если зажали экран телефона
-        canvas.touchstart.addSubscriber(this._userInputToolResolver.canvasOnTouchStart);
+        canvas.touchstart.addSubscriber(this._userInputToolResolver.canvasOnTouchStart.bind(this._userInputToolResolver));
         canvas.canvasElement.addEventListener("touchstart", (event) => canvas.touchstart.invoke(event), false);
 
         // указываем что делать если водят пальцем по экрану
-        canvas.touchmove.addSubscriber(this._userInputToolResolver.canvasOnTouchMove);
+        canvas.touchmove.addSubscriber(this._userInputToolResolver.canvasOnTouchMove.bind(this._userInputToolResolver));
         canvas.canvasElement.addEventListener("touchmove", (event) => canvas.touchmove.invoke(event), false);
 
         // указываем что делать если отжали палец от экрана телефона
-        canvas.touchend.addSubscriber(this._userInputToolResolver.canvasOnClickUp);
+        canvas.touchend.addSubscriber(this._userInputToolResolver.canvasOnClickUp.bind(this._userInputToolResolver));
         canvas.canvasElement.addEventListener("touchend", (event) => canvas.touchend.invoke(event), false);
-        canvas.touchcancel.addSubscriber(this._userInputToolResolver.canvasOnClickUp);
+        canvas.touchcancel.addSubscriber(this._userInputToolResolver.canvasOnClickUp.bind(this._userInputToolResolver));
         canvas.canvasElement.addEventListener("touchcancel", (event) => canvas.touchcancel.invoke(event), false);
 
         // указываем что делать если зажали мышь
-        canvas.onmousedown.addSubscriber(this._userInputToolResolver.canvasOnMouseDown);
+        canvas.onmousedown.addSubscriber(this._userInputToolResolver.canvasOnMouseDown.bind(this._userInputToolResolver));
         canvas.canvasElement.onmousedown = (event) => canvas.onmousedown.invoke(event);
 
         // указываем что делать если отжали мышь
-        canvas.onmouseup.addSubscriber(this._userInputToolResolver.canvasOnClickUp);
+        canvas.onmouseup.addSubscriber(this._userInputToolResolver.canvasOnClickUp.bind(this._userInputToolResolver));
         canvas.canvasElement.onmouseup = (event) => canvas.onmouseup.invoke(event);
-        canvas.onmouseout.addSubscriber(this._userInputToolResolver.canvasOnClickUp);
+        canvas.onmouseout.addSubscriber(this._userInputToolResolver.canvasOnClickUp.bind(this._userInputToolResolver));
         canvas.canvasElement.onmouseout = (event) => canvas.onmouseout.invoke(event);
     
         // реакция на колесико мыши, масштабирование карты WheelEvent
-        canvas.onwheel.addSubscriber(this._userInputToolResolver.canvasOnWeelMouse);
+        canvas.onwheel.addSubscriber(this._userInputToolResolver.canvasOnWeelMouse.bind(this._userInputToolResolver));
         canvas.canvasElement.onwheel = (event) => canvas.onwheel.invoke(event);
 
         // указываем, кто будет обрабатывать все эти события с мыши\тача
@@ -112,7 +111,7 @@ export class ActionController{
     /** отдельно вынесеная логика создания события перересечения спрайтов */
     private intersectionEventInitialization(){
         // подписываемся на событие в холдере о появлении нового спрайта
-        this.engine.spriteHolder.spriteCreatedEvent.addSubscriber(this.sriteCreatedEventHandler);
+        this.engine.spriteHolder.spriteCreatedEvent.addSubscriber(this.sriteCreatedEventHandler.bind(this));
         // sriteCreatedEventHandler подписывается на событие изменения координат у нового спрайта
 
         // что происходит далее:
@@ -137,7 +136,7 @@ export class ActionController{
     private sriteCreatedEventHandler(eventInfo: SpriteCreatedEventInfo){
         // Действия для метода intersectionEventInitialization (см. там зачем)
         // подписываеся на событие изменения координат
-        eventInfo.createdSprite.coordinatesChangedEvent.addSubscriber(this.spriteCoordinatesChangedEventHandler);
+        eventInfo.createdSprite.coordinatesChangedEvent.addSubscriber(this.spriteCoordinatesChangedEventHandler.bind(this));
         // проверяем, если у нового спрайта уже заданы координаты, то считаем, что "координаты изменились" и вызываем соотвествующую ф-ю
         if(eventInfo.createdSprite.coordinates){
             let spriteCoordinatesChangedEventInfo = new SpriteCoordinatesChangedEventInfo();
@@ -209,7 +208,7 @@ class LoopWorker{
             this.oneEngineStep(); // вызов главной ф-ии движка, которая все заставляет работать.
         }
 
-        this.animationFrame(this.recursionEngineStep); // делаем рекурсию - вызываем самого себя, только через 
+        this.animationFrame(this.recursionEngineStep.bind(this)); // делаем рекурсию - вызываем самого себя, только через 
                                                        // метод-прослойку, чтобы не словить переполнение стека
     }
 
@@ -507,10 +506,10 @@ export class UserInputController{
                 userInputToolResolver: UserInputToolResolver) {
 
         // подписываемся на все события UserInputToolResolver, чтобы на них реагировать
-        userInputToolResolver.engineOnClickEvent.addSubscriber(this.engineOnMouseClickEventHandler);
-        userInputToolResolver.engineOnMouseMoveEvent.addSubscriber(this.engineOnMouseMoveEventHandler);
-        userInputToolResolver.setMapScaleEvent.addSubscriber(this.setMapScaleEventHandler);
-        userInputToolResolver.setScrollMapEvent.addSubscriber(this.setScrollMapEventHandler);
+        userInputToolResolver.engineOnClickEvent.addSubscriber(this.engineOnMouseClickEventHandler.bind(this));
+        userInputToolResolver.engineOnMouseMoveEvent.addSubscriber(this.engineOnMouseMoveEventHandler.bind(this));
+        userInputToolResolver.setMapScaleEvent.addSubscriber(this.setMapScaleEventHandler.bind(this));
+        userInputToolResolver.setScrollMapEvent.addSubscriber(this.setScrollMapEventHandler.bind(this));
     }
 
     public engineOnMouseClickEventHandler(eventInfo: EngineMouseEventInfo){

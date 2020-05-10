@@ -9,7 +9,8 @@ export class X_Y{
     public coordinatesChangedEvent = new EventDistributorWithInfo<CoordinatesChangedEvent, CoordinatesChangedEventInfo>();
 
     public constructor(x: number, y: number) {
-        this.setNewValues(x, y);
+        this._x = x;
+        this._y = y;
     }
 
     /** вставить новые значения координат */
@@ -72,7 +73,9 @@ export function sleep(ms: number) {
 export class EventDistributorWithInfo<Func extends (eventArgs: EventArgs) => void, EventArgs>{
     private subscribes: Map<Guid, Func> = new Map<Guid, Func>();
 
-    /** добавить функцию, которую вызывать при возникновении события. Возвращает id функции, чтобы ее можно было удалить по id  */
+    /** добавить функцию, которую вызывать при возникновении события. Возвращает id функции, чтобы ее можно было удалить по id 
+        * - пример: endEvent.addSubscriber(this.endEventHandler.bind(this)); // при передаче функции не забывайте передавать контекст .bind-ом
+     */
     public addSubscriber(subscriber: Func) : Guid{
         let id = Guid.create();
         this.subscribes.set(id, subscriber);
@@ -107,7 +110,9 @@ export class EventDistributorWithInfo<Func extends (eventArgs: EventArgs) => voi
 export class EventDistributor{
     private subscribes: Map<Guid, SubscriberFunc> = new Map<Guid, SubscriberFunc>();
 
-    /** добавить функцию, которую вызывать при возникновении события. Возвращает id функции, чтобы ее можно было удалить по id  */
+    /** добавить функцию, которую вызывать при возникновении события. Возвращает id функции, чтобы ее можно было удалить по id.
+     * - пример: endEvent.addSubscriber(this.endEventHandler.bind(this)); // при передаче функции не забывайте передавать контекст .bind-ом
+      */
     public addSubscriber(subscriber: SubscriberFunc) : Guid{
         let id = Guid.create();
         this.subscribes.set(id, subscriber);
@@ -142,7 +147,8 @@ export class Size{
     public sizeChangedEvent = new EventDistributorWithInfo<SizeChangedEvent, SizeChangedEventInfo>();
 
     public constructor(width: number, height: number) {
-        this.setNewValues(width, height);
+        this._width = width;
+        this._height = height;
     }
 
     /** вставить новые значения размера */

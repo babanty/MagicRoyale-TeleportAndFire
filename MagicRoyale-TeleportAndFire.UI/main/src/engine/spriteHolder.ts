@@ -29,6 +29,7 @@ export class SpriteHolder{
     public constructor(engine: Engine) {
         this._sprites = new Collections.LinkedList<Sprite>();
         this._pictures = new Collections.Dictionary<string, InternalPicture>();
+        this._engine = engine;
     }
 
 

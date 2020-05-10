@@ -72,7 +72,7 @@ export class Render{
         let clearedSprites = this.clearSrpites(sprites);
 
         // получаем готовые к отрисовке "обертки спрайта" (например координаты, с учетом камеры, нарезанная анимация и т.д.)
-        let spriteWrappers: SpriteWrapper[];
+        let spriteWrappers = new Array<SpriteWrapper>();
         for(let sprite of clearedSprites){
             spriteWrappers.push(this.getSpriteWrapper(sprite));
         }
@@ -106,7 +106,7 @@ export class Render{
         this.spritesInFrameRenderStartedEvent.invoke();
         this.renderSprites(sprites); // отрисовываем спрайты
 
-        this.frameRenderedEvent.invoke; // указываем, что кадр отрисован
+        this.frameRenderedEvent.invoke(); // указываем, что кадр отрисован
     }
 
     /** Добавить картинку, например фон. Может реагировать на изменение масштаба и скорллинг, но не реагирует на клик, 

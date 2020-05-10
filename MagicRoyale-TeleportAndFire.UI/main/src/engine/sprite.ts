@@ -110,8 +110,8 @@ export class Sprite{
     // чтобы актуализировались координаты спрайта, а так же подписываемся на достижения финиша в классе вектора движения
     public set vector(vector: MovingVector){
         this._vector = vector;
-        this._vector.endEvent.addSubscriber(this.endEventHandler); // подписываемся на событие вектора о том что движение по нему окончено
-        this.functionUpdatingCoorditanesEveryStepId = this.functionsInGameLoop.addSubscriber(this.updatingCoordinatesByVector);
+        this._vector.endEvent.addSubscriber(this.endEventHandler.bind(this)); // подписываемся на событие вектора о том что движение по нему окончено
+        this.functionUpdatingCoorditanesEveryStepId = this.functionsInGameLoop.addSubscriber(this.updatingCoordinatesByVector.bind(this));
     }
     protected endEventHandler(){ 
         // передаем подписчикам, что движение по вектору окончено
@@ -127,7 +127,7 @@ export class Sprite{
     public set coordinates(coordinates: X_Y){
         let oldCoordinates = this.coordinates ? new X_Y(this.coordinates.x, this.coordinates.x) : null;
         this._coordinates = coordinates; // устанавливаем новые координаты
-        coordinates.coordinatesChangedEvent.addSubscriber(this.coorditanesChangedEventHandler); // подписываемся на их событие об изменении
+        coordinates.coordinatesChangedEvent.addSubscriber(this.coorditanesChangedEventHandler.bind(this)); // подписываемся на их событие об изменении
         
         // вызваем ф-ю которая должна отрабатывать при изменении координат спрайта
         let eventInfo = new CoordinatesChangedEventInfo();
@@ -245,7 +245,7 @@ export class MovingVector{
         eventInfo.newValues = endCoordinates;
         this.endCoordinatesChangedEventHandler(eventInfo);
         // подписываемся на событие изменения новых координат X_Y
-        endCoordinates.coordinatesChangedEvent.addSubscriber(this.endCoordinatesChangedEventHandler)
+        endCoordinates.coordinatesChangedEvent.addSubscriber(this.endCoordinatesChangedEventHandler.bind(this))
     }
 
     // Приватные поля

@@ -128,14 +128,14 @@ export class DebugMode{
 
         // id спрайта, на которого навели мышью
         this.onSpriteMouseSubscribeId = this.engine.actionController.userInputToolResolver.engineOnMouseMoveEvent.addSubscriber((event) => 
-                                                            this.debugInfoLines[4] = event.sprite.id.toString())
+                                                            this.debugInfoLines[4] = event.sprite?.id.toString())
         // id спрайта, на которого нажали
         this.onSpriteTouchSubscribeId = this.engine.actionController.userInputToolResolver.engineOnClickEvent.addSubscriber((event) => 
-                                                            this.debugInfoLines[4] = event.sprite.id.toString())
+                                                            this.debugInfoLines[4] = event.sprite?.id.toString())
 
         // Расчет фпс движка
         // подписываемся на событие, что "логика рассчитана" в actionController
-        this.engineTaktsSubscribeId = this.engine.actionController.logicExecutedEvent.addSubscriber(() => this.engineTaktsCounter++);
+        this.engineTaktsSubscribeId = this.engine.actionController.logicExecutedEvent.addSubscriber(() => {this.engineTaktsCounter++});
         // создаем таймер, который сбрасывает счетчик каждую секунду
         this.engineTaktsTimerId = setInterval(() => {
             this.engineTaktsPs = this.engineTaktsCounter;
@@ -144,17 +144,17 @@ export class DebugMode{
 
         // Расчет фпс картинки
         // подписываемся на событие, что "кадр отрисован" в render
-        this.drawCounterSubscribeId = this.engine.render.frameRenderedEvent.addSubscriber(() => this.frameCounter++)
+        this.drawCounterSubscribeId = this.engine.render.frameRenderedEvent.addSubscriber(() => this.frameCounter++);
         // создаем таймер, который сбрасывает счетчик каждую секунду
         this.drawCounterTimerId = setInterval(() => {
-            this.drowFps = this.engineTaktsCounter;
+            this.drowFps = this.frameCounter;
             this.frameCounter = 0;
         }, 1000);
 
         // подписаться на событие от рендера, что он отрисовал кадр и прорисовать дебаг инфу поверх
-        this.frameRenderedSubscribeId = this.engine.render.frameRenderedEvent.addSubscriber(() => this.updateDebugInfo);
+        this.frameRenderedSubscribeId = this.engine.render.frameRenderedEvent.addSubscriber((this.updateDebugInfo.bind(this)));
         // обновлять инфу независимо от движка (т.к. движок может тупить, а данные дебага нужны актуальные)
-        this.updateTimerId = setInterval (this.updateDebugInfo, this.delay);
+        this.updateTimerId = setInterval (this.updateDebugInfo.bind(this), this.delay);
     }
 
     /** освободить ресурсы и больше не отображать инфомрацию */
