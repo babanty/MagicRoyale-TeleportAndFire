@@ -35,15 +35,16 @@ export class SpriteHolder{
 
     /** создать спрайт на карте, у которого еще не загружена картинка с загрузкой картинки. 
      * Если не удалось загрузить картинку выкинет Error*/
-    public createSprite(id: Guid, config: PictureConfig) : Sprite{
+    public async createSpriteAsync(id: Guid, config: PictureConfig) : Promise<Sprite>{
         // валидаия аргументов
         if(!config) throw new Error("config: PictureConfig can't be null.");
 
-        // выкачиваем картинку с сервера
-        let image = this.getPicture(config.srcPath) // пробуем выкачать из кеша
+        // пробуем выкачать из кеша
+        let image = this.getPicture(config.srcPath) 
 
+        // загружаем картинку с нуля
         if(!image){ // в кеше картинки не оказалось
-            image = this.downloadAndCachePicture(config, 10000); // загружаем картинку с нуля
+            image = await this.downloadAndCachePictureAsync(config, 10000); 
             if(image == null) throw new Error("Image upload failed."); // не удалось загрузить в течении отведенного времени
         }
         
@@ -93,7 +94,7 @@ export class SpriteHolder{
         while (isLoad === false) {
             await sleep(4);
             i++;
-            if (i > timeout/4) null;
+            if (i > timeout/4) return null;
         };
 
         // кешируем картинку
@@ -107,16 +108,21 @@ export class SpriteHolder{
     }
 
 
-    /** загрузить картинку с файлового сервера для дальнейшего использования в sprite. Автоматически кеширует ее.
-     * Если нужно заново загрузить картинку с сервера (например, обновить) просто вызовите этот метод повторно
-     * @param timeout - время ожидания в мс, до момента, когда выполнение окончится и вернется null
-     */
-    public downloadAndCachePicture(config: PictureConfig, timeout: number = 15000) : HTMLImageElement{
-        let task = new Promise((result) => this.downloadAndCachePictureAsync(config, timeout));
-        task.then(result => {return result});
+    // /** загрузить картинку с файлового сервера для дальнейшего использования в sprite. Автоматически кеширует ее.
+    //  * Если нужно заново загрузить картинку с сервера (например, обновить) просто вызовите этот метод повторно
+    //  * @param timeout - время ожидания в мс, до момента, когда выполнение окончится и вернется null
+    //  */
+    // public downloadAndCachePicture(config: PictureConfig, timeout: number = 15000) : HTMLImageElement{
+    //     // TODO порешать эту хрень. Удалить или придумать как асинхронный метод сделать синхронным 
+    //     let lool = "kkk";
+    //     let task = new Promise(() => this.downloadAndCachePictureAsync(config, timeout));
+    //     task.then(result => {
+    //         let loooool = "sd";
+    //         return result;
+    //     });
         
-        return null;
-    }
+    //     return null;
+    // }
 
 
     /** Спрятанная загрузка картинки. Делается "подкапотно асинхронно". Чтобы распаралелить загрузку картинок можно использовать
@@ -315,12 +321,16 @@ export class SpriteHolder{
 
 /** конфигурация картинки для спрайта */
 export class PictureConfig{
-    /** путь до картинки на сервере. Например, './image/myPic.jpg' */
-    public srcPath: string;
-    /** масштаб, где 1 - это 1 к одному */
-    public scale: number = 1;
-    /** геометрическая фигура, нужна для обработки событий мыши */
-    public figure: MaskFigure = MaskFigure.rectangle;
+
+    /** конфигурация картинки для спрайта 
+     * @param srcPath - путь до картинки на сервере. Например, './image/myPic.jpg'
+     * @param scale - масштаб, где 1 - это 1 к одному
+     * @param figure - геометрическая фигура, нужна для обработки событий мыши
+    */
+    public constructor(public srcPath: string,
+        public scale: number = 1,
+        public figure: MaskFigure = MaskFigure.rectangle){
+    }
 }
 
 /** [private - не использовать за пределами SpriteHolder-а] загруженная картинка
@@ -345,4 +355,3 @@ export class SpriteCreatedEventInfo {
     public constructor(public createdSprite: Sprite){
     }
 }
-

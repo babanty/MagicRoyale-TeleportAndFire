@@ -85,8 +85,13 @@ export class Canvas {
         this.canvasElement.style.overflow = "hidden";   // TODO [refactor] - не известно для чего, возможно удалить
         this.canvasElement.style.top = "0";             // чтобы элемент был в упор к левому верхнему краю браузера
         this.canvasElement.style.left = "0";            // чтобы элемент был в упор к левому верхнему краю браузера
+
+        // укзаываем размеры html элемента
         this.canvasElement.style.width = "100%";        // чтобы элемент был на весь экран браузера (но не на весь чисто экран)
         this.canvasElement.style.height = "100%";       // чтобы элемент был на весь экран браузера (но не на весь чисто экран)
+        // указываем сколько пикселей вмещает в себя canvas
+        this.canvasElement.width = this.canvasElement.clientWidth;        // чтобы элемент был на весь экран браузера (но не на весь чисто экран)
+        this.canvasElement.height = this.canvasElement.clientHeight;       // чтобы элемент был на весь экран браузера (но не на весь чисто экран)
     }
 }
 

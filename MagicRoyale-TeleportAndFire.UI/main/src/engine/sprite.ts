@@ -7,8 +7,8 @@ export class Sprite{
     // Обязательные поля
     /** id. Желательно должен соотвествовать тому, что лежит на сервере */
     public id: Guid;
-    /** отображаемые размеры картинки в пикселях при масштае камеры 1 к 1. Оригинальный размер картинки может отличаться */
-    public picSize: Size;  
+    /** отображаемые размеры картинки в пикселях. Изменяются при изменении scale-спрайта. Оригинальный размер картинки может отличаться */
+    public picSize: Size = new Size(0, 0);  
     /** масштаб, где 1 - это 1 к одному */
     public get scale(): number{return this._scale};
     /** путь до картинки.*/
@@ -82,8 +82,8 @@ export class Sprite{
         this.id = id;
         this.layer = 0;
         this.coordinates = new X_Y(0, 0);
-        this.setImage(image, 0, MaskFigure.rectangle);
         this.picSize = new Size(image.width, image.height);
+        this.setImage(image, 1, MaskFigure.rectangle);
         this.isHidden = isHidden;
     }
 
@@ -99,7 +99,7 @@ export class Sprite{
 
     public set layer(layer: number){
         if(!layer){ // если передали null, undef.. etc
-            layer = 0;
+            this._layer = 0;
             return;
         }
 
@@ -461,12 +461,18 @@ export class SpriteAnimation{
     /** Конструктор класса 
      * @constructor
      * @param id - id. Желательно должен соотвествовать тому, что лежит на сервере
+     * @param frameNum - количество кадров
+     * @param timeBetweenFrame - время между кадрами
+     * @param widthSlicedOneFrame - ширина нарезного кадра
+     * @param doStart - сразу стартануть анимацию при создании
+     * @param frameNumNext - с какого кадра анимации начать отрисовывать
      */
     constructor(frameNum: number, timeBetweenFrame: number, 
                 widthSlicedOneFrame: number, doStart: boolean = true, frameNumNext: number = 0) {
         this.frameNum = frameNum;
         this.timeBetweenFrame = timeBetweenFrame;
         this.widthSlicedOneFrame = widthSlicedOneFrame;
+        this.frameNumNext = frameNumNext;
         
         if(doStart) this.doStart();
     }

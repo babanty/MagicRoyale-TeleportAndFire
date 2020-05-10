@@ -1,18 +1,53 @@
 // import Post from './Post' // заимпортить класс
 import './styles.css' 
-import './testBabel.ts'
+// import './testBabel.ts'
 import { Test1 } from './test1';
 import { Engine } from "./engine/engine";
+import { Guid } from 'guid-typescript';
+import { PictureConfig } from './engine/spriteHolder';
+import { Size, X_Y } from './engine/common';
+import { SpriteAnimation, MaskFigure, MovingVector } from './engine/sprite';
 
-function initialize() {
+async function initialize() {
     let gameCanvasParrentElement = document.getElementById('gameContent');
     let engine = new Engine(gameCanvasParrentElement);
     engine.debugMode.debugModeEnable = true;
+    engine.debugMode.message = "Нет сообщений.";
 
+    // делаем тян
+    /*done*/ let tyanId = Guid.create();
+    /*done*/ let tyanPicConfig = new PictureConfig('./images/tyan.png');    
+    /*done*/ let tyan = await engine.spriteHolder.createSpriteAsync(tyanId, tyanPicConfig);
+    /*done*/ tyan.coordinates.setNewValues(300, 50);
+    /*done*/ tyan.picSize = new Size(200, 200);
+    /* :c */ tyan.scale = 0.3; // TODO - не правильно робит в связке с picSize (перебивает его, а должен дополнять)
+    /*done*/ tyan.functionsInGameLoop.addSubscriber(() => tyan.rotate++); // кружимся
+    /* :c */ tyan.mouseClickEvent = (event) => console.log(`Приветушки, кликнули на меня в координатах: ${event.x, event.y}`);
+    /* :c */ tyan.isSkipClick = false;
+    /*done*/ tyan.isStaticCoordinates = false;
+    /*done*/ tyan.isHidden = false;
+    /* :c */ //tyan.animation = new SpriteAnimation(2, 500, tyan.image.width / 2, true, 0); // TODO тут не работает потому что 3 кадра рисует вместо 2х
+    /* :c */ //tyan.animation.doLoop();
+    /* no tests */ tyan.figure = MaskFigure.circle; // TODO - протестировать как работают пересечения
+    /* no tests */ tyan.layer = 2; // TODO - протестировать как работает отрисовка по слоям (разные слои и на одном слое тот кто выше первее)
+    /* :c */ tyan.mouseMoveEvent = (event) => console.log(`Приветушки, нетрож меня в координатах: ${event.x, event.y}`);
+    /* new tests */ //tyan.offsetPic = new X_Y(100, 200); // TODO - протестировать действиетльно ли клик по маске в другом месте. Отрисовывается правильно
+    /* :c */ // tyan.vector = new MovingVector(tyan.coordinates, new X_Y(tyan.coordinates.x + 400, tyan.coordinates.x - 100), 5000, true); // TODO вектор вообще все сломал
+    /* no tests */ tyan.vectorMovementEndedEvent.addSubscriber(() => console.log(`Я прилетела в координаты: ${tyan.coordinates.x};${tyan.coordinates.y}`));
 
-    let test1 = new Test1();
-    test1.WriteLol();
+    // let test1 = new Test1();
+    // test1.WriteLol();
 }
+
+// TODO
+// заменить везде if(!myVar) на check т.к. если myVar это number, то 0 тоже засчитает за "нет"
+// сделать так чтобы камера при клике (+-10 пикселей) не сдигалась и засчитывался именно клик
+// первый раз когда пытаешься переместить камеру орет, что нет стартовых координат
+// не работает масштабирование по колесику
+// куча TODO при создании тян 
+// не работает клик по спрайту и mouseMove и вообще заменить его на нормальное событие наше современное
+
+
 
 
 window.onload = () => {

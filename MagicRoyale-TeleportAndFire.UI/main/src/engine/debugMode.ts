@@ -26,9 +26,10 @@ export class DebugMode{
      * - [2] - текущий fps движка, а не отрисовки
      * - [3] - текущий fps отрисовки (но не движка)
      * - [4] - id спрайта, на которого навели мышью
+     * - [5] - камера: положение и масштаб
      * - [последний - reservedLinesNum-1] - просто сообщение (this.message)
     */
-    public get reservedLinesNum(): number {return 5};
+    public get reservedLinesNum(): number {return 7};
     /** все что построчно выводится в режиме дебага. Чтобы добавить дополнительную строку: debugInfoLines.push("моя инфа") */
     public debugInfoLines = new Array<string>(this.reservedLinesNum);
     /** размер шрифта информации выводящейся на экран в pt */
@@ -87,6 +88,10 @@ export class DebugMode{
         this.debugInfoLines[2] = this.engineTaktsPs.toString();
         // текущий fps отрисовки (но не движка)
         this.debugInfoLines[3] = this.drowFps.toString();
+
+        // пишем показатели камеры
+        let camera = this.engine.render.camera;
+        this.debugInfoLines[5] = `Camera - x: ${camera.coordinates.x}; y: ${camera.coordinates.y}; scale: ${camera.scaleMap}`;
 
         // последним пишем сообщение
         this.debugInfoLines[this.reservedLinesNum - 1] = this.message;
