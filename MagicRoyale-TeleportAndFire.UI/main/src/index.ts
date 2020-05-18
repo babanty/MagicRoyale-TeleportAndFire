@@ -6,7 +6,8 @@ import { Engine } from "./engine/engine";
 import { Guid } from 'guid-typescript';
 import { PictureConfig } from './engine/spriteHolder';
 import { Size, X_Y } from './engine/common';
-import { SpriteAnimation, MaskFigure, MovingVector } from './engine/sprite';
+import { SpriteAnimation, MaskFigure, MovingVector, Sprite } from './engine/sprite';
+import { onFullScreen } from './engine/tools';
 
 async function initialize() {
     let gameCanvasParrentElement = document.getElementById('gameContent');
@@ -19,6 +20,27 @@ async function initialize() {
 
 
     // делаем тян
+    let tyan = await addTyan(engine);
+
+    // делаем кнопку на "весь экран"
+    let fullScreenButton = await addFullScreenButton(engine);
+
+    // let test1 = new Test1();
+    // test1.WriteLol();
+}
+
+// TODO
+1.остановились на том что в мобильной версии не правильно работает масштабирование, вероятно из-за не правильного Target.
+Target должен быть как неигровая координата - центр между пальцев
+2.скролл при большом масштабе слишком маленький. Сейчас он просто разница координат. Переделать его на "разница переведенная в игровую длинну"
+// заменить везде if(!myVar) на check т.к. если myVar это number, то 0 тоже засчитает за "нет". Так же сделать и для просто if(что-то). Проще всего пройтись по всем if-ам
+// сделать так чтобы камера при клике (+-10 пикселей) не сдигалась и засчитывался именно клик
+// криво работает масштабирование, картинка с правого нижнего угла улетает в левый верхний
+// куча TODO при создании тян 
+// не работает клик по спрайту и mouseMove и вообще заменить его на нормальное событие наше современное
+
+/** добавить барышню */
+async function addTyan(engine: Engine) : Promise<Sprite>{
     /*done*/ let tyanId = Guid.create();
     /*done*/ let tyanPicConfig = new PictureConfig('./images/tyan.png');    
     /*done*/ let tyan = await engine.spriteHolder.createSpriteAsync(tyanId, tyanPicConfig);
@@ -39,16 +61,19 @@ async function initialize() {
     /* :c */ // tyan.vector = new MovingVector(tyan.coordinates, new X_Y(tyan.coordinates.x + 400, tyan.coordinates.x - 100), 5000, true); // TODO вектор вообще все сломал
     /* no tests */ tyan.vectorMovementEndedEvent.addSubscriber(() => console.log(`Я прилетела в координаты: ${tyan.coordinates.x};${tyan.coordinates.y}`));
 
-    // let test1 = new Test1();
-    // test1.WriteLol();
+    return tyan;
 }
 
-// TODO
-// заменить везде if(!myVar) на check т.к. если myVar это number, то 0 тоже засчитает за "нет". Так же сделать и для просто if(что-то). Проще всего пройтись по всем if-ам
-// сделать так чтобы камера при клике (+-10 пикселей) не сдигалась и засчитывался именно клик
-// криво работает масштабирование, картинка с правого нижнего угла улетает в левый верхний
-// куча TODO при создании тян 
-// не работает клик по спрайту и mouseMove и вообще заменить его на нормальное событие наше современное
+/** добавить кнопку "на весь экран" */
+async function addFullScreenButton(engine: Engine) : Promise<Sprite>{
+    let fullScreenButton = await engine.spriteHolder.createSpriteAsync(Guid.create(), new PictureConfig('./images/fullScreenButton.png'));
+    fullScreenButton.coordinates = new X_Y(30, 30);
+    fullScreenButton.isStaticCoordinates = true;
+    fullScreenButton.mouseClickEvent.addSubscriber(() => onFullScreen(engine.canvas.canvasElement));
+    fullScreenButton.isHidden = false;
+
+    return fullScreenButton;
+}
 
 
 /** инициализация центральныйх линий */

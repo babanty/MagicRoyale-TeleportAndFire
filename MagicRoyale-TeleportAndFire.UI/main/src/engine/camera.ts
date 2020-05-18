@@ -42,12 +42,11 @@ export class Camera{
         if(!target) target = new X_Y(this.coordinates.x, this.coordinates.y);
 
         const normalizeScaleFactor = howMuchToChangeScaleMap / 10; // нормализованное значение изменения масштаба, чтобы он не скакал слишком резко
-        const oldScale = this.scaleMap;
         const finiteFactor = 1 + normalizeScaleFactor; // конечный множетель после всех преобразований
         this.scaleMap*= finiteFactor; // изменяем масштаб карты
-        const scaleRange = this.scaleMap - oldScale;
 
         if (howMuchToChangeScaleMap > 0) { // если мы приближаем
+            // к этой формуле пришел интуитивно - перебором
             this.coordinates = new X_Y( this.coordinates.x + -target.x * (1 / this.scaleMap / 10),
                                         this.coordinates.y + -target.y * (1 / this.scaleMap / 10));
         } else { // если камера удаляется
