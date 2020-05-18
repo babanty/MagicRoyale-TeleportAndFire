@@ -9,6 +9,8 @@ export class Render{
     // Публичные поля
     /** canvas - html5-элемент внутри которого все отрисовывается */
     public get canvasElement(): HTMLCanvasElement{return this._canvasElement};
+    /** контекст холста. Именно с помощью него можно все рисовать, а не html-элемента. */
+    public get canvasContext(): CanvasRenderingContext2D{return this._canvasContext};
     /** класс отвечающий за камеру (глаза игрока) в игре */
     public get camera(): Camera{return this._camera};
     /** событие, что движок начал отрисовывать кадр */
@@ -23,7 +25,7 @@ export class Render{
 
     // Приватные поля
     /** контекст холста. Именно с помощью него можно все рисовать, а не html-элемента. */
-    protected canvasContext: CanvasRenderingContext2D;
+    protected _canvasContext: CanvasRenderingContext2D;
     /** [изменять через canvasElement] canvas - html5-элемент внутри которого все отрисовывается */
     protected _canvasElement: HTMLCanvasElement;
     /** класс отвечающий за камеру (глаза игрока) в игре */
@@ -32,7 +34,7 @@ export class Render{
     // Setter-ы свойств
     /** установить canvas - html5-элемент внутри которого все отрисовывается */
     public set canvasElement (canvasElement: HTMLCanvasElement) {
-        this.canvasContext = canvasElement.getContext('2d'); // Создаем 2d пространство, с ним далее работаем
+        this._canvasContext = canvasElement.getContext('2d'); // Создаем 2d пространство, с ним далее работаем
         this._canvasElement = canvasElement;
     }
     /** установить камеру (глаза игрока) в игре */
@@ -161,7 +163,7 @@ export class Render{
             for (let ii = -1; ii <= numHeight; ii++) { // замостим по высоте
                 let x = Math.ceil(this._camera.coordinates.x / backgroungWidth);
                 let y = Math.ceil(this._camera.coordinates.y / backgrounHeight);
-                this.canvasContext.drawImage(picture,
+                this._canvasContext.drawImage(picture,
                     -x * backgroungWidth + backgroungWidth * i + this._camera.coordinates.x, // x
                     -y * backgrounHeight + backgrounHeight * ii +this._camera.coordinates.y, // y
                     backgroungWidth, // ширина
@@ -177,8 +179,8 @@ export class Render{
      */
     public absoluteCoordinatesToGameCoordinates(absoluteCoordinates: X_Y) : X_Y {
         // спервая учитываем камеру
-        let x = absoluteCoordinates.x + this.camera.coordinates.x;
-        let y = absoluteCoordinates.y + this.camera.coordinates.y;
+        let x = absoluteCoordinates.x - this.camera.coordinates.x;
+        let y = absoluteCoordinates.y - this.camera.coordinates.y;
 
         // учитываем масштаю
         x = x * this.camera.scaleMap;
@@ -208,7 +210,7 @@ export class Render{
 
     /** очищаем холст (делаем полностью белым) */
     protected clearCanvas(){
-        this.canvasContext.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height); 
+        this._canvasContext.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height); 
     }
 
 
@@ -302,21 +304,21 @@ export class Render{
     */
     protected drawSrpiteWrapperOnCanvas(sprite: SpriteWrapper){
         // сохраняем нормальные настройки канваса манипуляциями (например, кручением)
-        this.canvasContext.save(); 
+        this._canvasContext.save(); 
 
         // делаем центр холста у этой картинки
-        this.canvasContext.translate(sprite.x, sprite.y); 
-        this.canvasContext.translate(sprite.width / 2, sprite.height / 2);
+        this._canvasContext.translate(sprite.x, sprite.y); 
+        this._canvasContext.translate(sprite.width / 2, sprite.height / 2);
 
         // крутим канвас если у картинку указано, что ее нужно крутануть 
         if(sprite.rotate){
-            this.canvasContext.rotate(inRadians(sprite.rotate)); // поворачиаем все что дальше будет отрисовано
+            this._canvasContext.rotate(inRadians(sprite.rotate)); // поворачиаем все что дальше будет отрисовано
         }
 
         // рисуем картинку
         if(sprite instanceof SpriteAnimationWrapper){ // если анимация
             let spriteAnimantion = sprite as SpriteAnimationWrapper;
-            this.canvasContext.drawImage(spriteAnimantion.picture, 
+            this._canvasContext.drawImage(spriteAnimantion.picture, 
                 spriteAnimantion.leftUpCoordinatesSlicedOneFrame.x, // x - координата левого верхнего угла вырезаемого кадра в общей картинке
                 spriteAnimantion.leftUpCoordinatesSlicedOneFrame.y, // y - координата левого верхнего угла вырезаемого кадра в общей картинке
                 spriteAnimantion.widthSlicedOneFrame, // ширина вырезаемого кадра
@@ -325,14 +327,14 @@ export class Render{
                                                                                // потому что ранее мы изменили центр canvas-а
                 spriteAnimantion.width, spriteAnimantion.height) // ширина и высота рисуемой картинки
         }else{ // если не анимация
-            this.canvasContext.drawImage(sprite.picture, 
+            this._canvasContext.drawImage(sprite.picture, 
                 -(sprite.width / 2), -(sprite.height / 2), // вместо x,y здесь так, потому что ранее мы изменили центр canvas-а
                 sprite.width, sprite.height)
         }
 
 
          // сбрасываем настройки канваса после всех манипуляций (например, кручения)
-        this.canvasContext.restore();
+        this._canvasContext.restore();
     }
 }
 

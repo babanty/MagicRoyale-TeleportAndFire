@@ -293,7 +293,7 @@ export class SpriteHolder{
     protected GetSpritesFromLayer(sprites: Collections.LinkedList<Sprite>, layer: number = null) : Collections.LinkedList<Sprite>{
         let result = new Collections.LinkedList<Sprite>();
 
-        if(!sprites || sprites.isEmpty){ // если ни чего не передали
+        if(!sprites || sprites.isEmpty()){ // если ни чего не передали
             return result;
         }
 

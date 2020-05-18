@@ -33,7 +33,7 @@ export class DebugMode{
     /** все что построчно выводится в режиме дебага. Чтобы добавить дополнительную строку: debugInfoLines.push("моя инфа") */
     public debugInfoLines = new Array<string>(this.reservedLinesNum);
     /** размер шрифта информации выводящейся на экран в pt */
-    public debugInfoFontSize = 20;
+    public debugInfoFontSize = 10;
     /** hex-цвет информации выводящейся на экран. По умолчанию красный */
     public debugInfoColor = "#ff0000";
     /** как часто обновляется информация в мс */
@@ -108,10 +108,10 @@ export class DebugMode{
                                                                             `Mouse - x: ${event.offsetX}; y: ${event.offsetY};`);
         this.touchmoveSubscribeId = this.engine.canvas.touchmove.addSubscriber((event) => {
                         let offsetCoordinates1 = getOffsetValues(event, this.engine.canvas.canvasElement, 0);
-                        this.debugInfoLines[0] = `Touch1 - x: ${offsetCoordinates1.x}; y: ${offsetCoordinates1.y};`;
+                        this.debugInfoLines[0] = `Touch1 - x: ${Math.round(offsetCoordinates1.x)}; y: ${Math.round(offsetCoordinates1.y)};`;
                         if(event.changedTouches[1]){ // если есть второе нажатие
                             let offsetCoordinates2 = getOffsetValues(event, this.engine.canvas.canvasElement, 1);
-                            this.debugInfoLines[0] += ` Touch2 - x: ${offsetCoordinates2.x}; y: ${offsetCoordinates2.y};`
+                            this.debugInfoLines[0] += ` Touch2 - x: ${Math.round(offsetCoordinates2.x)}; y: ${Math.round(offsetCoordinates2.y)};`
                         }
                     });
 
@@ -123,11 +123,11 @@ export class DebugMode{
         this.gameTouchMoveSubscribeId = this.engine.canvas.touchmove.addSubscriber((event) => {
             let offsetCoordinates1 = getOffsetValues(event, this.engine.canvas.canvasElement, 0);
             let gameCoordinates1 = this.engine.render.absoluteCoordinatesToGameCoordinates(offsetCoordinates1);
-            this.debugInfoLines[0] = `GameTouch1 - x: ${gameCoordinates1.x}; y: ${gameCoordinates1.y};`;
+            this.debugInfoLines[0] = `GameTouch1 - x: ${Math.round(gameCoordinates1.x)}; y: ${Math.round(gameCoordinates1.y)};`;
             if(event.changedTouches[1]){ // если есть второе нажатие
                 let offsetCoordinates2 = getOffsetValues(event, this.engine.canvas.canvasElement, 1);
                 let gameCoordinates2 = this.engine.render.absoluteCoordinatesToGameCoordinates(offsetCoordinates2);
-                this.debugInfoLines[0] += ` GameTouch2 - x: ${gameCoordinates2.x}; y: ${gameCoordinates2.y};`
+                this.debugInfoLines[0] += ` GameTouch2 - x: ${Math.round(gameCoordinates2.x)}; y: ${Math.round(gameCoordinates2.y)};`
             }
         });
 

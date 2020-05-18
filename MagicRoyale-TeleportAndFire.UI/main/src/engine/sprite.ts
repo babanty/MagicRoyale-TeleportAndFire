@@ -46,10 +46,17 @@ export class Sprite{
     public animation: SpriteAnimation;
 
     // События
-    /** что делать объекту, если на него кликнули */
-    public mouseClickEvent: ((event: MouseEvent) => any);
-    /** событие, на спрайт навели мышь */
-    public mouseMoveEvent: ((event: MouseEvent) => any);
+    /** что делать объекту, если на него кликнули.
+     * - передавать сюда ф-ю без аргументов или принимающую 1 аргумент eventInfo: MouseEvent.
+     * - пример mySprite.mouseClickEvent.addSubscriber(function(eventInfo: MouseEvent) {...}); 
+     * - пример mySprite.mouseClickEvent.addSubscriber((eventInfo: MouseEvent) => {...}); */
+    public mouseClickEvent = new EventDistributorWithInfo<(eventInfo: MouseEvent) => void, MouseEvent>();
+    /** событие, на спрайт навели мышь 
+     * - передавать сюда ф-ю без аргументов или принимающую 1 аргумент eventInfo: MouseEvent.
+     * - пример mySprite.mouseMoveEvent.addSubscriber(function(eventInfo: MouseEvent) {...}); 
+     * - пример mySprite.mouseMoveEvent.addSubscriber((eventInfo: MouseEvent) => {...}); 
+    */
+    public mouseMoveEvent = new EventDistributorWithInfo<(eventInfo: MouseEvent) => void, MouseEvent>();
     /** событие изменения координат спрайта */
     public coordinatesChangedEvent = new EventDistributorWithInfo<SpriteCoordinatesChangedEvent, SpriteCoordinatesChangedEventInfo>();
     /** событие о достижении конечных координат вектора у спрайта */
@@ -88,7 +95,7 @@ export class Sprite{
     }
 
 
-    /** объеединяющий метод вызвающий прочие методы по созданию html-элемента canvas */
+    /** масштаб отрисовываемой картинки относительно реальных размеров картинки */
     public set scale (scale: number) {
         if(this.image){
             this.picSize.setNewValues(this.image.width * scale, this.image.height * scale);
