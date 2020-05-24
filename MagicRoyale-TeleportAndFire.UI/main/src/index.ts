@@ -19,11 +19,13 @@ async function initialize() {
     engine.render.frameRenderedEvent.addSubscriber(() => drowCenterLines(engine));
 
 
-    // делаем тян
-    let myAnimation = await addAnimation(engine);
+    // делаем квадрат + анимация
+    let myRectangle = await addRectangle(engine);
 
-    // делаем тян
-    let tyan = await addTyan(engine);
+    // делаем круг
+    let circle = await addCircle(engine);
+
+    engine.actionController.intersectionEvent.addSubscriber((event) => console.log(`нападающий: ${event.moovingSprite.tag}; стоящий: ${event.standingSprites[0].tag}`));
 
     // делаем кнопку на "весь экран"
     let fullScreenButton = await addFullScreenButton(engine);
@@ -33,35 +35,55 @@ async function initialize() {
 }
 
 // TODO
+//после последних переделок с mask у меня сломалось масштабирование
 // 1.остановились на том что в мобильной версии не правильно работает масштабирование, вероятно из-за не правильного Target.
 // Target должен быть как неигровая координата - центр между пальцев
 // 2.скролл при большом масштабе слишком маленький. Сейчас он просто разница координат. Переделать его на "разница переведенная в игровую длинну"
 // заменить везде if(!myVar) на check т.к. если myVar это number, то 0 тоже засчитает за "нет". Так же сделать и для просто if(что-то). Проще всего пройтись по всем if-ам
 // куча TODO при создании тян 
 
-/** добавить анимацию */
-async function addAnimation(engine: Engine) : Promise<Sprite>{
-    /*done*/ let tyanId = Guid.create();
-    /*done*/ let tyanPicConfig = new PictureConfig('./images/animationPic.png');    
-    /*done*/ let tyan = await engine.spriteHolder.createSpriteAsync(tyanId, tyanPicConfig);
-    /*done*/ tyan.coordinates.setNewValues(300, 50);
-    /*done*/ tyan.picSize = new Size(200, 200);
-    /*done*/ //tyan.scale = 0.3;
-    /*done*/ tyan.functionsInGameLoop.addSubscriber(() => tyan.rotate++); // кружимся
-    /*done*/ tyan.mouseClickEvent.addSubscriber((event) => console.log(`Приветушки, кликнули на меня в координатах: ${event.x, event.y}`));
-    /*done*/ tyan.isSkipClick = false;
-    /*done*/ tyan.isStaticCoordinates = false;
-    /*done*/ tyan.isHidden = false;
-    /*done*/ tyan.animation = new SpriteAnimation(4, 500, tyan.image.width / 4, true, 0);
-    /*done*/ tyan.animation.doLoop();
-    /* no tests */ tyan.figure = Figure.circle; // TODO - протестировать как работают пересечения
-    /* no tests */ tyan.layer = 2; // TODO - протестировать как работает отрисовка по слоям (разные слои и на одном слое тот кто выше первее)
-    /*done*/ tyan.mouseMoveEvent.addSubscriber((event) => console.log(`Приветушки, нетрож меня в координатах: ${event.x, event.y}`));
-    /* new tests */ //tyan.offsetPic = new X_Y(100, 200); // TODO - протестировать действиетльно ли клик по маске в другом месте. Отрисовывается правильно
-    /*done*/ tyan.vector = new MovingVector(tyan.coordinates, new X_Y(tyan.coordinates.x + 400, tyan.coordinates.x - 100), 1000, true); // TODO вектор вообще все сломал
-    /*done*/ tyan.vectorMovementEndedEvent.addSubscriber(() => console.log(`Я прилетела в координаты: ${tyan.coordinates.x};${tyan.coordinates.y}`));
+/** добавить квадрат + анимация */
+async function addRectangle(engine: Engine) : Promise<Sprite>{
+    /*done*/ let rectangleId = Guid.create();
+    /*done*/ let rectanglePicConfig = new PictureConfig('./images/animationPic.png');    
+    /*done*/ let rectangle = await engine.spriteHolder.createSpriteAsync(rectangleId, rectanglePicConfig);
+    /*done*/ rectangle.coordinates.setNewValues(300, 50);
+    /*:C */ //rectangle.picSize = new Size(200, 200);
+    /*:C*/ //rectangle.scale = 0.3;
+    /*done*/ rectangle.functionsInGameLoop.addSubscriber(() => rectangle.rotate++); // кружимся
+    /*done*/ rectangle.mouseClickEvent.addSubscriber((event) => alert(`Йа квадрат : ${event.x}, ${event.y}`));
+    /*done*/ rectangle.isSkipClick = false;
+    /*done*/ rectangle.isStaticCoordinates = false;
+    /*done*/ rectangle.isHidden = false;
+    /*done*/ rectangle.animation = new SpriteAnimation(4, 500, rectangle.image.width / 4, true, 0);
+    /*done*/ rectangle.animation.doLoop();
+    /* no tests */ rectangle.mask.figure = Figure.rectangle; // TODO - протестировать как работают пересечения
+    /* no tests */ rectangle.layer = 2; // TODO - протестировать как работает отрисовка по слоям (разные слои и на одном слое тот кто выше первее)
+    /*done*/ rectangle.mouseMoveEvent.addSubscriber((event) => console.log(`Приветушки, нетрож меня в координатах: ${event.x}, ${event.y}`));
+    /* new tests */ //rectangle.offsetPic = new X_Y(100, 200); // TODO - протестировать действиетльно ли клик по маске в другом месте. Отрисовывается правильно
+    /*done*/ rectangle.vector = new MovingVector(rectangle.coordinates, new X_Y(rectangle.coordinates.x + 400, 0), 1000, true); // TODO вектор вообще все сломал
+    /*done*/ rectangle.vectorMovementEndedEvent.addSubscriber(() => console.log(`Я прилетела в координаты: ${rectangle.coordinates.x};${rectangle.coordinates.y}`));
+    rectangle.tag = "квадрат";
 
-    return tyan;
+    return rectangle;
+}
+
+
+/** добавить круг */
+async function addCircle(engine: Engine) : Promise<Sprite>{
+    let circleId = Guid.create();
+    let circlePicConfig = new PictureConfig('./images/cirle.png');    
+    let circle = await engine.spriteHolder.createSpriteAsync(circleId, circlePicConfig);
+    circle.tag = "кружок";
+    circle.coordinates.setNewValues(600, 50);
+    //circle.picSize = new Size(200, 200);
+    circle.isHidden = false;
+    circle.mouseClickEvent.addSubscriber((event) => alert(`Йа кружок : ${event.x}, ${event.y}`));
+    circle.mask.figure = Figure.circle; // TODO - протестировать как работают пересечения
+    circle.layer = 2; // TODO - протестировать как работает отрисовка по слоям (разные слои и на одном слое тот кто выше первее)
+
+    /* new tests */ //circle.offsetPic = new X_Y(100, 200); // TODO - протестировать действиетльно ли клик по маске в другом месте. Отрисовывается правильно
+    return circle;
 }
 
 /** добавить кнопку "на весь экран" */

@@ -30,9 +30,8 @@ export class Sprite{
     public isHidden: boolean = false;
     /** пропускать ли нажатие. Может отрисовываться выше всех по слою, но при нажатии пропускает клик и отдаем ему того кто ниже */
     public isSkipClick: boolean = false;
+    /** маска спрайта. По ней определяется клик мышью и пересечения на карте с другими объектами */
     public mask: Mask;
-    /** геометрическая фигура, нужна для обработки событий мыши. По умолчанию прямоугольник */
-    public figure: Figure;
     /** вектор перемещения. Если он задается, то каждый так спрайт изменяет свою координату */
     public get vector(): MovingVector{return this._vector};
     /** просто сюда можно добавить какой-то текст\объект и т.д. по необходимости для личных нужд. На работу движка это поле не влияет */
@@ -93,7 +92,7 @@ export class Sprite{
         this.layer = 0;
         this.coordinates = new X_Y(0, 0);
         this.picSize = new Size(image.width, image.height);
-        this.setImage(image, 1, Figure.rectangle);
+        this.setImage(image, 1);
         this.isHidden = isHidden;
     }
 
@@ -171,13 +170,18 @@ export class Sprite{
     /** вставить\заменить картинку спрайту 
      * @param image - собственно, картинка
      * @param scale - изменение ее размера в %, где 1 - это 1 к одному
-     * @param figure - указать "фигуру", например согласно ней будет работать реакция на клик мышью
+     * @param mask - маска, если null, то по умолчанию соотвествует картинке спрайта
     */
-    public setImage (image: HTMLImageElement, scale: number = 1, figure: Figure = Figure.rectangle){
+    public setImage (image: HTMLImageElement, scale: number = 1, mask: Mask = null){
         this._image = image;
         this.scale = scale;
         this._pathPic = this._image.src;
-        this.figure = figure;
+        if(!mask){
+            this.mask = new Mask(this.picSize, Figure.rectangle, new X_Y(0,0));
+        }else{
+            this.mask = mask;
+        }
+        
     }
 
 
@@ -192,6 +196,19 @@ export class Sprite{
     }
 }
 
+/** маска спрайта. По ней определяется клик мышью и пересечения на карте с другими объектами */
+export class Mask{
+    /**
+     * Конструктор: маска спрайта. По ней определяется клик мышью и пересечения на карте с другими объектами 
+     * @param size - размеры маски. По умолчанию - тот же объект, что и picSize у спрайта.
+     * @param figure - геометрическая фигура, нужна для обработки событий мыши. По умолчанию прямоугольник 
+     * @param offset - смещение (отклонение) маски от реальной картинки. То есть обработка нажатий на маску и 
+     * реально отрисовываемая картинка могут быть в разных местах.
+     */
+    public constructor( public size: Size,
+                        public figure: Figure = Figure.rectangle,
+                        public offset: X_Y = new X_Y(0, 0)){}
+}
 
 /** геометрическая фигура маски спрайта, нужна для обработки событий мыши */
 export enum Figure { 

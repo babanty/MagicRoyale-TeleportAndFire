@@ -1,4 +1,4 @@
-import { Sprite, Figure } from "./sprite";
+import { Sprite } from "./sprite";
 import { Camera } from "./camera";
 import { Guid } from "guid-typescript";
 import { X_Y, EventDistributor } from "./common";

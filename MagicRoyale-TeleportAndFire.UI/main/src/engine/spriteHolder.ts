@@ -1,6 +1,6 @@
-import { Sprite, Figure } from "./sprite";
+import { Sprite, Figure, Mask } from "./sprite";
 import * as Collections from "typescript-collections";
-import {sleep, X_Y, EventDistributorWithInfo} from "./common";
+import {sleep, X_Y, EventDistributorWithInfo, Size} from "./common";
 import { Guid } from "guid-typescript";
 import * as geometry from "./geometry";
 import { Engine } from "./engine";
@@ -50,9 +50,8 @@ export class SpriteHolder{
         
         let sprite = new Sprite(id, image);
         sprite.scale = config.scale;
-        sprite.figure = config.figure;
 
-        sprite.setImage(image, config.scale, config.figure);
+        sprite.setImage(image, config.scale);
 
         // добавляем спрайт в коллекцию объектов держателю объектов
         this.addSprite(sprite);
@@ -101,7 +100,6 @@ export class SpriteHolder{
         let internalPicture = new InternalPicture();
         internalPicture.image = image;
         internalPicture.scale = config.scale;
-        internalPicture.figure = config.figure;
         this._pictures.setValue(config.srcPath, internalPicture);
 
         return image;
@@ -151,7 +149,7 @@ export class SpriteHolder{
     /** какие спрайты находится в указанных координатах
      * @param getFromMaxLayer - получить спрайты с самого "высокого" уровня (те, что выше всех)
      * @param isIgnoreStaticSprites - игнорировать ли спрайты, у который опция isStatic = true (то есть те, что "прибиты" к экрану, 
-     * типо кнопок, если isIgnoreStaticSprites = true, то возвращены из ф-ии не будут)
+     * типо кнопок, если isIgnoreStaticSprites = true, то такие спрайты не будут в конечной выборке)
      * @param layer - слой на котором смотреть. Если null, то вернет все спрайты на указанном месте. Если getFromMaxLayer = true, 
      * то значение аргумента layer проигнорируется
      */
@@ -177,20 +175,20 @@ export class SpriteHolder{
 
             // пересчитываем координаты спрайтов на физические координаты как они отрисовываются
             let usePointCoordinates = sprite.isStaticCoordinates ? coordinates : preparedCoordinates; // берем те координаты, которые используются при расчетах для этого конркетного спрайта
-                    // TODO - возможно, то что ниже не правильно и вообще не надо делать
-            let useWidth = sprite.isStaticCoordinates ? sprite.picSize.width : this._engine.render.getRealCutLength(sprite.picSize.width); // рассчитываем правильную ширину спрайта 
-            let useHeight = sprite.isStaticCoordinates ? sprite.picSize.height : this._engine.render.getRealCutLength(sprite.picSize.height); // рассчитываем правильную ширину спрайта 
+
+            // получаем маску, по которой проверять пересечения (например клика мышки или пересечения спрайтов)
+            let mask = this.getMaskBody(sprite);
 
             // сперва отсеиваем всех у кого не совпадает прямоугольная область т.к. это дешевая операция
-            if(!geometry.IsBelongingPointToRectangle(usePointCoordinates, sprite.coordinates, useWidth, useHeight)){
+            if(!geometry.IsBelongingPointToRectangle(usePointCoordinates, mask.coordinates, mask.size.width, mask.size.height)){
                 return;
             }
 
-            // затем проверяем на совпадение с учетом фигуры и вычитаем из массива совпадений тех, кто не подходит
-            if(sprite.figure === Figure.circle){ // если у спрайта фигура - круг, то смотрим входи ли точка в круг
+            // затем проверяем на совпадение с учетом маски и вычитаем из массива совпадений тех, кто не подходит
+            if(sprite.mask.figure === Figure.circle){ // если у спрайта фигура - круг, то смотрим входи ли точка в круг
                 if(!geometry.IsBelongingPointToCirle(usePointCoordinates, 
-                                                    new X_Y(sprite.coordinates.x + sprite.picSize.width / 2, sprite.coordinates.y + sprite.picSize.height / 2), // считаем центр круга
-                                                    sprite.picSize.width / 2)){ // считаем радиус
+                                                    new X_Y(mask.coordinates.x + mask.size.width / 2, mask.coordinates.y + mask.size.height / 2), // считаем центр круга
+                                                    mask.size.width / 2)){ // считаем радиус
                     return;
                 }
             }
@@ -245,45 +243,47 @@ export class SpriteHolder{
      * 
      * Если необходимо узнать с кем вообще пересекается спрайт используйте: getAllIntersection
      */
-    public isSpritesIntersected(one: Sprite, two: Sprite) : boolean{
+    public isSpritesIntersected(first: Sprite, second: Sprite) : boolean{            
 
-            // если оба спрайта - прямоугольники
-            if(one.figure === Figure.rectangle && two.figure === Figure.rectangle){
-                let isIntersection = geometry.IntersectionFigures_RectangleAndRectangle(
-                                                                one.coordinates, one.picSize,
-                                                                two.coordinates, two.picSize);
-                return isIntersection;
-            }
-            
-            // если проверяемый-спрайт - круг, а подошедший по прямоугольной области - прямоугольник
-            if(one.figure === Figure.circle && two.figure === Figure.rectangle){
-                let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(
-                                                geometry.getRectangleCenter(two.coordinates, two.picSize),
-                                                two.picSize,
-                                                geometry.getRectangleCenter(one.coordinates, one.picSize),
-                                                geometry.getRadiusByRectangle(one.picSize));
-                return isIntersection;
-            }
+        let one = this.getMaskBody(first);
+        let two = this.getMaskBody(second);
 
-            // если проверяемый-спрайт - прямоугольник, а подошедший по прямоугольной области - круг
-            if(one.figure === Figure.rectangle && two.figure === Figure.circle){
-                let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(
-                                                geometry.getRectangleCenter(one.coordinates, one.picSize),
-                                                one.picSize,
-                                                geometry.getRectangleCenter(two.coordinates, two.picSize),
-                                                geometry.getRadiusByRectangle(two.picSize));
-                return isIntersection;
-            }
+        // если оба спрайта - прямоугольники
+        if(first.mask.figure === Figure.rectangle && second.mask.figure === Figure.rectangle){
+            let isIntersection = geometry.IntersectionFigures_RectangleAndRectangle(
+                                                            one.coordinates, one.size,
+                                                            two.coordinates, two.size);
+            return isIntersection;
+        }
+        
+        // если проверяемый-спрайт - круг, а подошедший по прямоугольной области - прямоугольник
+        if(first.mask.figure === Figure.circle && second.mask.figure === Figure.rectangle){
+            let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(
+                                            geometry.getRectangleCenter(two.coordinates, two.size),
+                                            two.size,
+                                            geometry.getRectangleCenter(one.coordinates, one.size),
+                                            geometry.getRadiusByRectangle(one.size));
+            return isIntersection;
+        }
+        // если проверяемый-спрайт - прямоугольник, а подошедший по прямоугольной области - круг
+        if(first.mask.figure === Figure.rectangle && second.mask.figure === Figure.circle){
+            let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(
+                                            geometry.getRectangleCenter(one.coordinates, one.size),
+                                            one.size,
+                                            geometry.getRectangleCenter(two.coordinates, two.size),
+                                            geometry.getRadiusByRectangle(two.size));
+            return isIntersection;
+        }
 
-            // если проверяемый-спрайт - круг, и подошедший по прямоугольной области - круг
-            if(one.figure === Figure.circle && two.figure === Figure.circle){
-                let isIntersection = geometry.IntersectionFigures_CirceAndCirce(
-                    geometry.getRectangleCenter(one.coordinates, one.picSize), 
-                    geometry.getRadiusByRectangle(one.picSize),
-                    geometry.getRectangleCenter(two.coordinates, two.picSize),
-                    geometry.getRadiusByRectangle(two.picSize));
-                return isIntersection;
-            }
+        // если проверяемый-спрайт - круг, и подошедший по прямоугольной области - круг
+        if(first.mask.figure === Figure.circle && second.mask.figure === Figure.circle){
+            let isIntersection = geometry.IntersectionFigures_CirceAndCirce(
+                geometry.getRectangleCenter(one.coordinates, one.size), 
+                geometry.getRadiusByRectangle(one.size),
+                geometry.getRectangleCenter(two.coordinates, two.size),
+                geometry.getRadiusByRectangle(two.size));
+            return isIntersection;
+        }
     }
 
 
@@ -316,6 +316,20 @@ export class SpriteHolder{
 
         return result;
     }
+
+    /** возвращает маску, по которой проверять пересечения (например клика мышки или пересечения спрайтов) */
+    protected getMaskBody(sprite: Sprite) : MaskBody {
+
+        // расчет координат с учетом смещения
+        let x = sprite.coordinates.x + sprite.mask.offset.x;
+        let y = sprite.coordinates.y + sprite.mask.offset.y;
+
+        // расчет ширины и высоты исходя из того, статический ли спрайт
+        let width = sprite.isStaticCoordinates ? sprite.mask.size.width : this._engine.render.getRealCutLength(sprite.mask.size.width); 
+        let height = sprite.isStaticCoordinates ? sprite.mask.size.height : this._engine.render.getRealCutLength(sprite.mask.size.height); 
+
+        return new MaskBody( new X_Y(x, y), new Size(width, height) );
+    }
 }
 
 
@@ -325,11 +339,9 @@ export class PictureConfig{
     /** конфигурация картинки для спрайта 
      * @param srcPath - путь до картинки на сервере. Например, './image/myPic.jpg'
      * @param scale - масштаб, где 1 - это 1 к одному
-     * @param figure - геометрическая фигура, нужна для обработки событий мыши
     */
     public constructor(public srcPath: string,
-        public scale: number = 1,
-        public figure: Figure = Figure.rectangle){
+        public scale: number = 1){
     }
 }
 
@@ -340,8 +352,6 @@ class InternalPicture{
     public image: HTMLImageElement;
     /** масштаб, где 1 - это 1 к одному */
     public scale: number = 1;
-    /** геометрическая фигура, нужна для обработки событий мыши */
-    public figure: Figure = Figure.rectangle;
 }
 
 
@@ -354,4 +364,9 @@ export class SpriteCreatedEventInfo {
     /** @param createdSprite - собственно, тот кто был создан */
     public constructor(public createdSprite: Sprite){
     }
+}
+
+class MaskBody{
+    constructor(public coordinates: X_Y,
+                public size: Size){}
 }
