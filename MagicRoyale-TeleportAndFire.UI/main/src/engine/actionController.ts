@@ -137,12 +137,14 @@ export class ActionController{
         // Действия для метода intersectionEventInitialization (см. там зачем)
         // подписываеся на событие изменения координат
         eventInfo.createdSprite.coordinatesChangedEvent.addSubscriber(this.spriteCoordinatesChangedEventHandler.bind(this));
-        // проверяем, если у нового спрайта уже заданы координаты, то считаем, что "координаты изменились" и вызываем соотвествующую ф-ю
-        if(eventInfo.createdSprite.coordinates){
-            let spriteCoordinatesChangedEventInfo = new SpriteCoordinatesChangedEventInfo();
-            spriteCoordinatesChangedEventInfo.sprite = eventInfo.createdSprite
-            this.spriteCoordinatesChangedEventHandler(spriteCoordinatesChangedEventInfo);
-        }
+
+        // TODO удалить
+        // // проверяем, если у нового спрайта уже заданы координаты, то считаем, что "координаты изменились" и вызываем соотвествующую ф-ю
+        // if(eventInfo.createdSprite.coordinates){
+        //     let spriteCoordinatesChangedEventInfo = new SpriteCoordinatesChangedEventInfo();
+        //     spriteCoordinatesChangedEventInfo.sprite = eventInfo.createdSprite
+        //     this.spriteCoordinatesChangedEventHandler(spriteCoordinatesChangedEventInfo);
+        // }
     };
 
 

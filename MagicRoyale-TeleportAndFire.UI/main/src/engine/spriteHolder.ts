@@ -1,4 +1,4 @@
-import { Sprite, MaskFigure } from "./sprite";
+import { Sprite, Figure } from "./sprite";
 import * as Collections from "typescript-collections";
 import {sleep, X_Y, EventDistributorWithInfo} from "./common";
 import { Guid } from "guid-typescript";
@@ -187,7 +187,7 @@ export class SpriteHolder{
             }
 
             // затем проверяем на совпадение с учетом фигуры и вычитаем из массива совпадений тех, кто не подходит
-            if(sprite.figure === MaskFigure.circle){ // если у спрайта фигура - круг, то смотрим входи ли точка в круг
+            if(sprite.figure === Figure.circle){ // если у спрайта фигура - круг, то смотрим входи ли точка в круг
                 if(!geometry.IsBelongingPointToCirle(usePointCoordinates, 
                                                     new X_Y(sprite.coordinates.x + sprite.picSize.width / 2, sprite.coordinates.y + sprite.picSize.height / 2), // считаем центр круга
                                                     sprite.picSize.width / 2)){ // считаем радиус
@@ -248,7 +248,7 @@ export class SpriteHolder{
     public isSpritesIntersected(one: Sprite, two: Sprite) : boolean{
 
             // если оба спрайта - прямоугольники
-            if(one.figure === MaskFigure.rectangle && two.figure === MaskFigure.rectangle){
+            if(one.figure === Figure.rectangle && two.figure === Figure.rectangle){
                 let isIntersection = geometry.IntersectionFigures_RectangleAndRectangle(
                                                                 one.coordinates, one.picSize,
                                                                 two.coordinates, two.picSize);
@@ -256,7 +256,7 @@ export class SpriteHolder{
             }
             
             // если проверяемый-спрайт - круг, а подошедший по прямоугольной области - прямоугольник
-            if(one.figure === MaskFigure.circle && two.figure === MaskFigure.rectangle){
+            if(one.figure === Figure.circle && two.figure === Figure.rectangle){
                 let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(
                                                 geometry.getRectangleCenter(two.coordinates, two.picSize),
                                                 two.picSize,
@@ -266,7 +266,7 @@ export class SpriteHolder{
             }
 
             // если проверяемый-спрайт - прямоугольник, а подошедший по прямоугольной области - круг
-            if(one.figure === MaskFigure.rectangle && two.figure === MaskFigure.circle){
+            if(one.figure === Figure.rectangle && two.figure === Figure.circle){
                 let isIntersection = geometry.IntersectionFigures_RectangleAndCirce(
                                                 geometry.getRectangleCenter(one.coordinates, one.picSize),
                                                 one.picSize,
@@ -276,7 +276,7 @@ export class SpriteHolder{
             }
 
             // если проверяемый-спрайт - круг, и подошедший по прямоугольной области - круг
-            if(one.figure === MaskFigure.circle && two.figure === MaskFigure.circle){
+            if(one.figure === Figure.circle && two.figure === Figure.circle){
                 let isIntersection = geometry.IntersectionFigures_CirceAndCirce(
                     geometry.getRectangleCenter(one.coordinates, one.picSize), 
                     geometry.getRadiusByRectangle(one.picSize),
@@ -329,7 +329,7 @@ export class PictureConfig{
     */
     public constructor(public srcPath: string,
         public scale: number = 1,
-        public figure: MaskFigure = MaskFigure.rectangle){
+        public figure: Figure = Figure.rectangle){
     }
 }
 
@@ -341,7 +341,7 @@ class InternalPicture{
     /** масштаб, где 1 - это 1 к одному */
     public scale: number = 1;
     /** геометрическая фигура, нужна для обработки событий мыши */
-    public figure: MaskFigure = MaskFigure.rectangle;
+    public figure: Figure = Figure.rectangle;
 }
 
 

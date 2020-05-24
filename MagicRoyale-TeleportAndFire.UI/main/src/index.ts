@@ -6,7 +6,7 @@ import { Engine } from "./engine/engine";
 import { Guid } from 'guid-typescript';
 import { PictureConfig } from './engine/spriteHolder';
 import { Size, X_Y } from './engine/common';
-import { SpriteAnimation, MaskFigure, MovingVector, Sprite } from './engine/sprite';
+import { SpriteAnimation, Figure, MovingVector, Sprite } from './engine/sprite';
 import { onFullScreen } from './engine/tools';
 
 async function initialize() {
@@ -20,6 +20,9 @@ async function initialize() {
 
 
     // делаем тян
+    let myAnimation = await addAnimation(engine);
+
+    // делаем тян
     let tyan = await addTyan(engine);
 
     // делаем кнопку на "весь экран"
@@ -30,36 +33,33 @@ async function initialize() {
 }
 
 // TODO
-1.остановились на том что в мобильной версии не правильно работает масштабирование, вероятно из-за не правильного Target.
-Target должен быть как неигровая координата - центр между пальцев
-2.скролл при большом масштабе слишком маленький. Сейчас он просто разница координат. Переделать его на "разница переведенная в игровую длинну"
+// 1.остановились на том что в мобильной версии не правильно работает масштабирование, вероятно из-за не правильного Target.
+// Target должен быть как неигровая координата - центр между пальцев
+// 2.скролл при большом масштабе слишком маленький. Сейчас он просто разница координат. Переделать его на "разница переведенная в игровую длинну"
 // заменить везде if(!myVar) на check т.к. если myVar это number, то 0 тоже засчитает за "нет". Так же сделать и для просто if(что-то). Проще всего пройтись по всем if-ам
-// сделать так чтобы камера при клике (+-10 пикселей) не сдигалась и засчитывался именно клик
-// криво работает масштабирование, картинка с правого нижнего угла улетает в левый верхний
 // куча TODO при создании тян 
-// не работает клик по спрайту и mouseMove и вообще заменить его на нормальное событие наше современное
 
-/** добавить барышню */
-async function addTyan(engine: Engine) : Promise<Sprite>{
+/** добавить анимацию */
+async function addAnimation(engine: Engine) : Promise<Sprite>{
     /*done*/ let tyanId = Guid.create();
-    /*done*/ let tyanPicConfig = new PictureConfig('./images/tyan.png');    
+    /*done*/ let tyanPicConfig = new PictureConfig('./images/animationPic.png');    
     /*done*/ let tyan = await engine.spriteHolder.createSpriteAsync(tyanId, tyanPicConfig);
     /*done*/ tyan.coordinates.setNewValues(300, 50);
     /*done*/ tyan.picSize = new Size(200, 200);
-    /*done*/ tyan.scale = 0.3;
+    /*done*/ //tyan.scale = 0.3;
     /*done*/ tyan.functionsInGameLoop.addSubscriber(() => tyan.rotate++); // кружимся
     /*done*/ tyan.mouseClickEvent.addSubscriber((event) => console.log(`Приветушки, кликнули на меня в координатах: ${event.x, event.y}`));
     /*done*/ tyan.isSkipClick = false;
     /*done*/ tyan.isStaticCoordinates = false;
     /*done*/ tyan.isHidden = false;
-    /* :c */ //tyan.animation = new SpriteAnimation(2, 500, tyan.image.width / 2, true, 0); // TODO тут не работает потому что 3 кадра рисует вместо 2х
-    /* :c */ //tyan.animation.doLoop();
-    /* no tests */ tyan.figure = MaskFigure.circle; // TODO - протестировать как работают пересечения
+    /*done*/ tyan.animation = new SpriteAnimation(4, 500, tyan.image.width / 4, true, 0);
+    /*done*/ tyan.animation.doLoop();
+    /* no tests */ tyan.figure = Figure.circle; // TODO - протестировать как работают пересечения
     /* no tests */ tyan.layer = 2; // TODO - протестировать как работает отрисовка по слоям (разные слои и на одном слое тот кто выше первее)
-    /* :c */ tyan.mouseMoveEvent.addSubscriber((event) => console.log(`Приветушки, нетрож меня в координатах: ${event.x, event.y}`));
+    /*done*/ tyan.mouseMoveEvent.addSubscriber((event) => console.log(`Приветушки, нетрож меня в координатах: ${event.x, event.y}`));
     /* new tests */ //tyan.offsetPic = new X_Y(100, 200); // TODO - протестировать действиетльно ли клик по маске в другом месте. Отрисовывается правильно
-    /* :c */ // tyan.vector = new MovingVector(tyan.coordinates, new X_Y(tyan.coordinates.x + 400, tyan.coordinates.x - 100), 5000, true); // TODO вектор вообще все сломал
-    /* no tests */ tyan.vectorMovementEndedEvent.addSubscriber(() => console.log(`Я прилетела в координаты: ${tyan.coordinates.x};${tyan.coordinates.y}`));
+    /*done*/ tyan.vector = new MovingVector(tyan.coordinates, new X_Y(tyan.coordinates.x + 400, tyan.coordinates.x - 100), 1000, true); // TODO вектор вообще все сломал
+    /*done*/ tyan.vectorMovementEndedEvent.addSubscriber(() => console.log(`Я прилетела в координаты: ${tyan.coordinates.x};${tyan.coordinates.y}`));
 
     return tyan;
 }

@@ -30,8 +30,9 @@ export class Sprite{
     public isHidden: boolean = false;
     /** пропускать ли нажатие. Может отрисовываться выше всех по слою, но при нажатии пропускает клик и отдаем ему того кто ниже */
     public isSkipClick: boolean = false;
+    public mask: Mask;
     /** геометрическая фигура, нужна для обработки событий мыши. По умолчанию прямоугольник */
-    public figure: MaskFigure;
+    public figure: Figure;
     /** вектор перемещения. Если он задается, то каждый так спрайт изменяет свою координату */
     public get vector(): MovingVector{return this._vector};
     /** просто сюда можно добавить какой-то текст\объект и т.д. по необходимости для личных нужд. На работу движка это поле не влияет */
@@ -43,7 +44,7 @@ export class Sprite{
      *  Это костыль на случай, если лень нормально вырезать в пеинте картинку, чтобы она правильно ложилась на маску */
     public offsetPic: X_Y = new X_Y(0, 0);
     /** [canBeNull] заполнив это поле вы сделаете картинку спрайта анимацией */
-    public animation: SpriteAnimation;
+    public get animation(): SpriteAnimation{return this._animation};
 
     // События
     /** что делать объекту, если на него кликнули.
@@ -75,6 +76,8 @@ export class Sprite{
     protected _coordinates: X_Y;
     /** вектор перемещения. Если он задается, то каждый так спрайт изменяет свою координату */
     protected _vector: MovingVector;
+    /** [canBeNull] заполнив это поле вы сделаете картинку спрайта анимацией */
+    protected _animation: SpriteAnimation;
 
     /** Конструктор класса игрового объекта на карте
      * @constructor
@@ -90,7 +93,7 @@ export class Sprite{
         this.layer = 0;
         this.coordinates = new X_Y(0, 0);
         this.picSize = new Size(image.width, image.height);
-        this.setImage(image, 1, MaskFigure.rectangle);
+        this.setImage(image, 1, Figure.rectangle);
         this.isHidden = isHidden;
     }
 
@@ -98,7 +101,11 @@ export class Sprite{
     /** масштаб отрисовываемой картинки относительно реальных размеров картинки */
     public set scale (scale: number) {
         if(this.image){
-            this.picSize.setNewValues(this.image.width * scale, this.image.height * scale);
+            if(this.animation){
+                this.picSize.setNewValues(this.animation.widthSlicedOneFrame * scale, this.image.height * scale);
+            }else{
+                this.picSize.setNewValues(this.image.width * scale, this.image.height * scale);
+            }
         }
 
         this._scale = scale;
@@ -111,6 +118,13 @@ export class Sprite{
         }
 
         this._layer = layer;
+    }
+
+    public set animation(animation: SpriteAnimation){
+        this._animation = animation;
+
+        // сдреживаем с масштабом
+        this.scale = this.scale;
     }
 
     // устанавливаем вектор движения. При этом докидываем действие в "действие на каждый шаг", 
@@ -134,7 +148,8 @@ export class Sprite{
     public set coordinates(coordinates: X_Y){
         let oldCoordinates = this.coordinates ? new X_Y(this.coordinates.x, this.coordinates.x) : null;
         this._coordinates = coordinates; // устанавливаем новые координаты
-        coordinates.coordinatesChangedEvent.addSubscriber(this.coorditanesChangedEventHandler.bind(this)); // подписываемся на их событие об изменении
+
+        if(coordinates) coordinates.coordinatesChangedEvent.addSubscriber(this.coorditanesChangedEventHandler.bind(this)); // подписываемся на их событие об изменении
         
         // вызваем ф-ю которая должна отрабатывать при изменении координат спрайта
         let eventInfo = new CoordinatesChangedEventInfo();
@@ -158,7 +173,7 @@ export class Sprite{
      * @param scale - изменение ее размера в %, где 1 - это 1 к одному
      * @param figure - указать "фигуру", например согласно ней будет работать реакция на клик мышью
     */
-    public setImage (image: HTMLImageElement, scale: number = 1, figure: MaskFigure = MaskFigure.rectangle){
+    public setImage (image: HTMLImageElement, scale: number = 1, figure: Figure = Figure.rectangle){
         this._image = image;
         this.scale = scale;
         this._pathPic = this._image.src;
@@ -179,13 +194,12 @@ export class Sprite{
 
 
 /** геометрическая фигура маски спрайта, нужна для обработки событий мыши */
-export enum MaskFigure { 
+export enum Figure { 
     rectangle=0, 
     circle=1
     // , hexagon=2 // не реализовано 
     // , polygon=3 // не реализовано 
 };
-
 
 /** Функция что исполняется каждый такт для конкретного спрайта. */
 export interface ActInGameLoop {
@@ -248,9 +262,7 @@ export class MovingVector{
             this._endCoordinates.coordinatesChangedEvent.deleteSubscriber(this.subscribeToEndCoordinatesChangedEventId);
         }
         // меняем конечные координаты на новые
-        let eventInfo = new CoordinatesChangedEventInfo();
-        eventInfo.newValues = endCoordinates;
-        this.endCoordinatesChangedEventHandler(eventInfo);
+        this._endCoordinates = endCoordinates;
         // подписываемся на событие изменения новых координат X_Y
         endCoordinates.coordinatesChangedEvent.addSubscriber(this.endCoordinatesChangedEventHandler.bind(this))
     }
@@ -299,7 +311,7 @@ export class MovingVector{
     protected _endCoordinates: X_Y;
     /** id (key) подписки на событие изменение координат */
     protected subscribeToEndCoordinatesChangedEventId: Guid;
-    /** обработчик события изменения координат */
+    /** обработчик события изменения координат (именно полей класса X_Y) */
     protected endCoordinatesChangedEventHandler(eventInfo: CoordinatesChangedEventInfo){
         // сохраняем текущие координаты и прогресс
         this.savedPercentPathBeforePaused = this.getActualPercentPath();
@@ -316,8 +328,9 @@ export class MovingVector{
      */
     constructor(startCoordinates: X_Y, endCoordinates: X_Y, speed: number, startImmediately = true) {
         this._startCoordinates = startCoordinates;
-        this.endCoordinates = endCoordinates;
         this.speed = speed;
+        this.endCoordinates = endCoordinates;
+        
         
         if(startImmediately){
             this.doStart();
@@ -354,8 +367,8 @@ export class MovingVector{
         }
 
         // если объект сейчас в движении
-        let timeNow = new Date();
-        let timeDiff = timeNow.getMilliseconds() - this._timeStart; // разница между стартом и текущим временем
+        let timeNow = Math.floor(Date.now());
+        let timeDiff = timeNow - this._timeStart; // разница между стартом и текущим временем
         let result = (timeDiff / this.speed) + this.savedPercentPathBeforePaused; 
         if(result > 1){
             return 1;
@@ -425,11 +438,11 @@ export class MovingVector{
     /** внутряняя функция стартования. Введена чтобы не дублировать код в start и pause */
     protected internalStart(){
         // указываем что движение началось
-        this._timeStart = new Date().getMilliseconds();
+        this._timeStart = Math.floor(Date.now());
         this._isMoving = true;
         // заводим "будильник", который в момент достижения цели "звякнет" и вызовит событие отработки вектора
         let timeLeft = this.savedPercentPathBeforePaused ? (1 - this.savedPercentPathBeforePaused) * this.speed : this.speed; // оставшееся время
-        this.alarmClockThatMovingEnded = setInterval(() => this.movingEnded, timeLeft);
+        this.alarmClockThatMovingEnded = setTimeout(() => this.movingEnded(), timeLeft);
     }
 }
 
@@ -453,21 +466,28 @@ export class SpriteAnimation{
     public frameNumNext: number = 0;
     /** активна ли анимация (true) или она на паузе (false) */
     public get isActive(): boolean{return this._isActive};
+    /** зациклена ли анимация (true) или она один раз отработает (false) */
+    public get isLoop(): boolean{return this._isLoop};
     /** наступило ли время отрисовки следующего кадра */
     public get isTimeDrawNextFrame(): boolean{return this._isTimeDrawNextFrame};
     public set isTimeDrawNextFrame(isTimeDrawNextFrame: boolean) {this._isTimeDrawNextFrame = isTimeDrawNextFrame};
+    /** отрисовался последний кадр анимации, она окончена */
+    public animationIsOverEvent = new EventDistributor();
 
     /** активна ли анимация (true) или она на паузе (false) */
     protected _isActive: boolean;
+    /** зациклена ли анимация (true) или она один раз отработает (false) */
+    protected _isLoop: boolean;
     /** наступило ли время отрисовки следующего кадра */
     protected _isTimeDrawNextFrame: boolean = true;
     /** содежрит в себе счетчик время как часто надо менять isTimeDrawNewFrame на true, зависит от timeBetweenFrame.
-     *  Как получить этот объект: возвращает setInterval*/
+     *  Как получить этот объект: возвращает setInterval */
     protected _counterFrame: NodeJS.Timeout;
+    /** id подписки на событие о том, что отрисовался последний кадр. Нужно, чтобы мочь отписаться от события  */
+    protected _animationIsOverSubscribeId: Guid;
 
     /** Конструктор класса 
      * @constructor
-     * @param id - id. Желательно должен соотвествовать тому, что лежит на сервере
      * @param frameNum - количество кадров
      * @param timeBetweenFrame - время между кадрами
      * @param widthSlicedOneFrame - ширина нарезного кадра
@@ -480,19 +500,25 @@ export class SpriteAnimation{
         this.timeBetweenFrame = timeBetweenFrame;
         this.widthSlicedOneFrame = widthSlicedOneFrame;
         this.frameNumNext = frameNumNext;
+        this._isLoop = false;
         
         if(doStart) this.doStart();
     }
 
     /** стартануть анимацию 1 раз целиком */
     public doStart(){
+        if(this._isActive){ // если анимацию уже работает
+            return;
+        }
+
         this._isActive = true;
         this._isTimeDrawNextFrame = true;
         
         // делаем функцию вызывающую раз внекоторое время вложенную стрелочную ф-ию со сменой кадра
         this._counterFrame = setInterval(() => {
             if(this.frameNumNext === this.frameNum - 1){ // если уже последний кадр, то очищаем интервал
-                this.doStop();
+                this.finishIterationOfAnimation();
+                this.animationIsOverEvent.invoke();
             } else { // если все хорошо и анимация еще идет
                 this.frameNumNext += 1
                 this._isTimeDrawNextFrame = true
@@ -503,11 +529,11 @@ export class SpriteAnimation{
 
     /** зациклить анимацию, то есть она постоянно будет повторяться */
     public doLoop(){
-        this._isActive = true;
-        this._isTimeDrawNextFrame = true;
-
-        // делаем функцию вызывающую раз внекоторое время вложенную стрелочную ф-ию со сменой кадра
-        this._counterFrame = setInterval(() => {this.frameNumNext += 1; this._isTimeDrawNextFrame = true}, this.timeBetweenFrame);
+        if(this._isLoop === false){
+            this._isLoop = true;
+            this.animationIsOverEvent.addSubscriber(() => this.doStart());
+            this.doStart()
+        }
     }
 
     /** паузнуть анимацию. Снять с паузы - doStart\doLoop */
@@ -518,9 +544,15 @@ export class SpriteAnimation{
 
     /** остановить и "обнулить" анимацию на начало */
     public doStop(){
+        if(this._isLoop) this.animationIsOverEvent.deleteSubscriber(this._animationIsOverSubscribeId) // удаляем функцию вызывающую раз внекоторое время повторняющийся старт анимации
+        this._isLoop = false;
+        this.finishIterationOfAnimation();
+    }
+
+    /** завершить итерацию анимации */
+    protected finishIterationOfAnimation(){
         this._isActive = false;
-        this._isTimeDrawNextFrame = false;
-        clearInterval(this._counterFrame); // удаляем функцию вызывающую раз внекоторое время смену кадра
+        clearInterval(this._counterFrame); // удаляем функцию вызывающую раз внекоторое время смену кадра  
         this.frameNumNext = 0;
     }
 }
