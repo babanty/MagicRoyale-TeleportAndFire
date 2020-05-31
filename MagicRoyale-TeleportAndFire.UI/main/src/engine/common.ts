@@ -29,6 +29,11 @@ export class X_Y{
         this.coordinatesChangedEvent.invoke(eventInfo);
     }
 
+    /** возвращает глубокую копию самого себя (иммутабельность) */
+    public getDeepCopy() : X_Y{
+        return new X_Y(this.x, this.y);
+    }
+
     private _x:number;
     private _y:number;
 }
@@ -169,6 +174,11 @@ export class Size{
 
     private _width:number;
     private _height:number;
+
+    /** возвращает глубокую копию самого себя (иммутабельность) */
+    public getDeepCopy() : Size{
+        return new Size(this.width, this.height);
+    }
 }
 
 /** событие изменения размеров */

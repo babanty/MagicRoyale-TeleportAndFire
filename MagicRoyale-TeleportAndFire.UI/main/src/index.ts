@@ -25,7 +25,10 @@ async function initialize() {
     // делаем круг
     let circle = await addCircle(engine);
 
-    engine.actionController.intersectionEvent.addSubscriber((event) => console.log(`нападающий: ${event.moovingSprite.tag}; стоящий: ${event.standingSprites[0].tag}`));
+    engine.actionController.intersectionEvent.addSubscriber((event) => {
+        console.log(`нападающий: ${event.moovingSprite.id}; стоящий: ${event.standingSprites[0].id}`);
+        event.moovingSprite.vector.doStop();
+    });
 
     // делаем кнопку на "весь экран"
     let fullScreenButton = await addFullScreenButton(engine);
@@ -35,21 +38,24 @@ async function initialize() {
 }
 
 // TODO
-//после последних переделок с mask у меня сломалось масштабирование
-// 1.остановились на том что в мобильной версии не правильно работает масштабирование, вероятно из-за не правильного Target.
+// 1. остановились на том что в мобильной версии не правильно работает масштабирование, вероятно из-за не правильного Target.
 // Target должен быть как неигровая координата - центр между пальцев
-// 2.скролл при большом масштабе слишком маленький. Сейчас он просто разница координат. Переделать его на "разница переведенная в игровую длинну"
-// заменить везде if(!myVar) на check т.к. если myVar это number, то 0 тоже засчитает за "нет". Так же сделать и для просто if(что-то). Проще всего пройтись по всем if-ам
-// куча TODO при создании тян 
+// 2. скролл при большом масштабе слишком маленький. Сейчас он просто разница координат. Переделать его на "разница переведенная в игровую длинну"
+// 3. заменить везде if(!myVar) на check т.к. если myVar это number, то 0 тоже засчитает за "нет". Так же сделать и для просто if(что-то). Проще всего пройтись по всем if-ам
+// 4. пройтись по TODO
+// 5. сделать изменение размера рабочей области канваса по размеру канваса при его изменении
+// 6. сделать поддержку SVG
+// 7. сделать размывку, чтобы все не выглядело тяким чопорным
+// 8. попробовать, если canvas - не весь экран
 
 /** добавить квадрат + анимация */
 async function addRectangle(engine: Engine) : Promise<Sprite>{
-    /*done*/ let rectangleId = Guid.create();
+    /*done*/ let rectangleId = "йа квадратик";
     /*done*/ let rectanglePicConfig = new PictureConfig('./images/animationPic.png');    
     /*done*/ let rectangle = await engine.spriteHolder.createSpriteAsync(rectangleId, rectanglePicConfig);
-    /*done*/ rectangle.coordinates.setNewValues(300, 50);
-    /*:C */ //rectangle.picSize = new Size(200, 200);
-    /*:C*/ //rectangle.scale = 0.3;
+    /*done*/ rectangle.coordinates.setNewValues(400, 50);
+    /*done*/ // rectangle.picSize = new Size(150, 150); // работает только если указать после вставки анимации
+    /*done*/ rectangle.scale = 0.3;
     /*done*/ rectangle.functionsInGameLoop.addSubscriber(() => rectangle.rotate++); // кружимся
     /*done*/ rectangle.mouseClickEvent.addSubscriber((event) => alert(`Йа квадрат : ${event.x}, ${event.y}`));
     /*done*/ rectangle.isSkipClick = false;
@@ -57,11 +63,11 @@ async function addRectangle(engine: Engine) : Promise<Sprite>{
     /*done*/ rectangle.isHidden = false;
     /*done*/ rectangle.animation = new SpriteAnimation(4, 500, rectangle.image.width / 4, true, 0);
     /*done*/ rectangle.animation.doLoop();
-    /* no tests */ rectangle.mask.figure = Figure.rectangle; // TODO - протестировать как работают пересечения
-    /* no tests */ rectangle.layer = 2; // TODO - протестировать как работает отрисовка по слоям (разные слои и на одном слое тот кто выше первее)
+    /*done*/ rectangle.mask.figure = Figure.rectangle; // TODO - не правильно указаны нападающий и стоящий
+    /*done*/ rectangle.layer = 1; // TODO - протестировать как работает отрисовка по слоям (разные слои и на одном слое тот кто выше первее)
     /*done*/ rectangle.mouseMoveEvent.addSubscriber((event) => console.log(`Приветушки, нетрож меня в координатах: ${event.x}, ${event.y}`));
-    /* new tests */ //rectangle.offsetPic = new X_Y(100, 200); // TODO - протестировать действиетльно ли клик по маске в другом месте. Отрисовывается правильно
-    /*done*/ rectangle.vector = new MovingVector(rectangle.coordinates, new X_Y(rectangle.coordinates.x + 400, 0), 1000, true); // TODO вектор вообще все сломал
+    /*done*/ // rectangle.offsetPic = new X_Y(100, 200);
+    /*done*/ rectangle.vector = new MovingVector(rectangle.coordinates, new X_Y(rectangle.coordinates.x + 300, 0), 1000, true); // TODO вектор вообще все сломал
     /*done*/ rectangle.vectorMovementEndedEvent.addSubscriber(() => console.log(`Я прилетела в координаты: ${rectangle.coordinates.x};${rectangle.coordinates.y}`));
     rectangle.tag = "квадрат";
 
@@ -71,7 +77,7 @@ async function addRectangle(engine: Engine) : Promise<Sprite>{
 
 /** добавить круг */
 async function addCircle(engine: Engine) : Promise<Sprite>{
-    let circleId = Guid.create();
+    let circleId = "йа кружок";
     let circlePicConfig = new PictureConfig('./images/cirle.png');    
     let circle = await engine.spriteHolder.createSpriteAsync(circleId, circlePicConfig);
     circle.tag = "кружок";
@@ -88,7 +94,7 @@ async function addCircle(engine: Engine) : Promise<Sprite>{
 
 /** добавить кнопку "на весь экран" */
 async function addFullScreenButton(engine: Engine) : Promise<Sprite>{
-    let fullScreenButton = await engine.spriteHolder.createSpriteAsync(Guid.create(), new PictureConfig('./images/fullScreenButton.png'));
+    let fullScreenButton = await engine.spriteHolder.createSpriteAsync("кнопка на весь экран", new PictureConfig('./images/fullScreenButton.png'));
     fullScreenButton.coordinates = new X_Y(30, 30);
     fullScreenButton.isStaticCoordinates = true;
     fullScreenButton.mouseClickEvent.addSubscriber(() => onFullScreen(engine.canvas.canvasElement));

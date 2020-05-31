@@ -6,7 +6,7 @@ export class Sprite{
 
     // Обязательные поля
     /** id. Желательно должен соотвествовать тому, что лежит на сервере */
-    public id: Guid;
+    public id: string;
     /** отображаемые размеры картинки в пикселях. Изменяются при изменении scale-спрайта. Оригинальный размер картинки может отличаться */
     public picSize: Size = new Size(0, 0);  
     /** масштаб, где 1 - это 1 к одному */
@@ -84,7 +84,7 @@ export class Sprite{
      * @param image - картинка спрайта
      * @param isHidden - спрятан ли спрайт (виден ли он и реагирует ли он на пересечения и нажатия)
      */
-    public constructor(id: Guid, image: HTMLImageElement, isHidden = true) {
+    public constructor(id: string, image: HTMLImageElement, isHidden = true) {
         if(!id) throw new Error("sprite.id can't be null");
         if(!image) throw new Error("sprite.image can't be null. You can set some stub.");
 
@@ -119,10 +119,12 @@ export class Sprite{
         this._layer = layer;
     }
 
+    /** При установлении анимации picSize изменяется. Если вам необходимо сохранить старые размеры спрайта, 
+     * установите picSize заново, после вставки анимации. scale заново устанавливать не нужно */
     public set animation(animation: SpriteAnimation){
         this._animation = animation;
 
-        // сдреживаем с масштабом
+        // возвращаем масштаб
         this.scale = this.scale;
     }
 
@@ -439,6 +441,7 @@ export class MovingVector{
 
     /** остановить и "обнулить" вектор на начало */
     public doStop(){
+        this.endEvent.invoke();
         this.savedPercentPathBeforePaused = 0;
         clearInterval(this.alarmClockThatMovingEnded);
         this._timeStart = null;

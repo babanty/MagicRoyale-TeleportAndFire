@@ -51,34 +51,44 @@ export function IntersectionFigures_RectangleAndCirce(rectangleCenter: X_Y, rect
     if (circleDistance.x <= (rectangleSize.width/2)) { return true; } 
     if (circleDistance.y <= (rectangleSize.height/2)) { return true; }
 
-    let cornerDistance_sq = (circleDistance.x - rectangleSize.width/2)^2 + (circleDistance.y - rectangleSize.height/2)^2;
+    let cornerDistance_sq = (circleDistance.x - rectangleSize.width/2) ** 2 + (circleDistance.y - rectangleSize.height/2) ** 2;
 
     return (cornerDistance_sq <= (circleRadius ** 2));
 }
 
 
-/** пересекаются ли указанный прямоугольник с другим прямоугольником. Дешевая (быстрая по скорости) операция проверки.
- * 
- * Перейди к функции, чтобы увидеть что значат ее аргументы.
- * 
- * Аргументы, где one и two это прямоугольники:
- * (a.x,a.y)--------------|
- *    |                   |
- *    |                   |
- *    |                   |
- *    |---------------(a.x1,a.y1)
- * (b.x,b.y)---------------------|
- *    |                          |
- *    |                          |
- *    |                          |
- *    |---------------------(b.x1,b.y1)
- */
+// /** пересекаются ли указанный прямоугольник с другим прямоугольником. Дешевая (быстрая по скорости) операция проверки.
+//  * 
+//  * Перейди к функции, чтобы увидеть что значат ее аргументы.
+//  * 
+//  * Аргументы, где one и two это прямоугольники:
+//  * (a.x,a.y)--------------|
+//  *    |                   |
+//  *    |                   |
+//  *    |                   |
+//  *    |---------------(a.x1,a.y1)
+//  * (b.x,b.y)---------------------|
+//  *    |                          |
+//  *    |                          |
+//  *    |                          |
+//  *    |---------------------(b.x1,b.y1)
+//  */
 export function IntersectionFiguresByCoordinates_RectangleAndRectangle(oneLeftTop: X_Y, oneRightBottom: X_Y, 
                                                     twoLeftTop: X_Y, twoRightBottom: X_Y) : boolean{
 
-    return ( oneLeftTop.y < twoRightBottom.y || oneRightBottom.y > twoLeftTop.y || 
-                oneRightBottom.x < twoLeftTop.x || oneLeftTop.x > twoRightBottom.x )  
+    return !(twoLeftTop.x > oneRightBottom.x || 
+        twoRightBottom.x < oneLeftTop.x || 
+        twoLeftTop.y > oneRightBottom.y ||
+        twoRightBottom.y < oneLeftTop.y);
 }
+
+// TODO - устаревший не корректный способ проверки пересечений квадрата
+// export function IntersectionFiguresByCoordinates_RectangleAndRectangle(oneLeftTop: X_Y, oneRightBottom: X_Y, 
+//                                                     twoLeftTop: X_Y, twoRightBottom: X_Y) : boolean{
+//     return ( oneLeftTop.y < twoRightBottom.y || oneRightBottom.y > twoLeftTop.y || 
+//                 oneRightBottom.x < twoLeftTop.x || oneLeftTop.x > twoRightBottom.x )  
+// }
+
 
 /** пересекаются ли указанный прямоугольник с другим прямоугольником. Дешевая (быстрая по скорости) операция проверки.
  * @param oneCoordinates - координаты первого прямоугольника (левый верхний край)

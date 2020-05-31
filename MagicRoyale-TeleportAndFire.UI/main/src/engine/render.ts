@@ -111,8 +111,8 @@ export class Render{
         this.frameRenderedEvent.invoke(); // указываем, что кадр отрисован
     }
 
-    /** Добавить картинку, например фон. Может реагировать на изменение масштаба и скорллинг, но не реагирует на клик, 
-     * пересечение и проч. Возращает id картинки из this.savedPictures
+    /** Добавить картинку, например фон. Возращает id картинки из this.savedPictures. Может реагировать на изменение масштаба
+     *  и скорллинг, но не реагирует на клик, пересечение и проч.
      * - "добавленные" картинки рисуются перед тем как будут нарисованы спрайты т.к. у них нет слоя. Если надо отрисовать после, то
      * можно, например по событию spritesRenderedEvent вызывать метод renderPictures
      * - картинки требуют значительно меньше ресурсов (тактов процессора), нежели чем спрайты, но они "тупые"
@@ -128,7 +128,8 @@ export class Render{
     public addPicture(picture: HTMLImageElement, x: number, y: number, isStatic: boolean = false,
                                     width: number = null, height: number = null) : Guid {
         let wrapper = new SpriteWrapper();
-        wrapper.spriteId = Guid.create();
+        let id = Guid.create();
+        wrapper.spriteId = id.toString();
         wrapper.layer = 0;
         wrapper.picture = picture;
         wrapper.rotate = 0;
@@ -147,8 +148,8 @@ export class Render{
             wrapper.height *= this.camera.scaleMap;
         }
 
-        this.savedPictures.set(wrapper.spriteId, wrapper);
-        return wrapper.spriteId;
+        this.savedPictures.set(id, wrapper);
+        return id;
     }    
 
 
@@ -178,13 +179,10 @@ export class Render{
      * - учитывается масштаб
      */
     public absoluteCoordinatesToGameCoordinates(absoluteCoordinates: X_Y) : X_Y {
-        // спервая учитываем камеру
-        let x = absoluteCoordinates.x - this.camera.coordinates.x;
-        let y = absoluteCoordinates.y - this.camera.coordinates.y;
-
-        // учитываем масштаю
-        x = x * this.camera.scaleMap;
-        y = y * this.camera.scaleMap;
+        // эта ф-ия обратная вот этой ф-ии: gameCoordinatesToAbsoluteCoordinates
+        
+        let x = absoluteCoordinates.x / this.camera.scaleMap - this.camera.coordinates.x;
+        let y = absoluteCoordinates.y / this.camera.scaleMap - this.camera.coordinates.y;
 
         return new X_Y(x, y);
     }
@@ -195,8 +193,8 @@ export class Render{
         // умножаем координаты камеры на масштаб;
         // смещаем координаты на положение камеры
         return new X_Y(
-                (gameCoordinates.x * this.camera.scaleMap) + (this.camera.coordinates.x  * this.camera.scaleMap),
-                (gameCoordinates.y * this.camera.scaleMap) + (this.camera.coordinates.y  * this.camera.scaleMap));
+                (gameCoordinates.x + this.camera.coordinates.x) * this.camera.scaleMap,
+                (gameCoordinates.y + this.camera.coordinates.y) * this.camera.scaleMap);
     }
 
     /** пересчитать длину отрезка (например ширину спрайта) на ту реальную длину в пикселях, которую будет отрисовывать рендериг
@@ -243,7 +241,7 @@ export class Render{
      * 1. координаты изменены, с учетом камеры
      * 2. если спрайт - анимация, то тут уже нужных срез картинки 
      * 3. если у спрайта указано смещение, то изменяем координаты согласно смещению */
-    protected getSpriteWrapper(sprite: Sprite) : SpriteWrapper{
+    public getSpriteWrapper(sprite: Sprite) : SpriteWrapper{
         let result: SpriteWrapper;
         if(sprite.animation){ // если это анимация, то создается одна спрайт-обертка под анимацию
             result = new SpriteAnimationWrapper();
@@ -344,7 +342,7 @@ class SpriteWrapper{
 
     // Публичные поля
     /** id оригинально спрайта. Поддержана иммутабельность приходящего значения (здесь записывается новый класс) */
-    public get spriteId(): Guid{return this._spriteId};
+    public get spriteId(): string{return this._spriteId};
     /** x-координата спрайта для канваса. */
     public x: number;
     /** y-координата спрайта для канваса. */
@@ -361,11 +359,11 @@ class SpriteWrapper{
     public layer: number
 
     // Приватные поля
-    private _spriteId: Guid;
+    private _spriteId: string;
 
     // Setter-ы свойств
-    public set spriteId (spriteId: Guid){
-        this._spriteId = Guid.parse(spriteId.toString());
+    public set spriteId (spriteId: string){
+        this._spriteId = spriteId;
     }
 }
 

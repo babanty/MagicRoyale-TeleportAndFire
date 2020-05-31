@@ -35,7 +35,7 @@ export class SpriteHolder{
 
     /** создать спрайт на карте, у которого еще не загружена картинка с загрузкой картинки. 
      * Если не удалось загрузить картинку выкинет Error*/
-    public async createSpriteAsync(id: Guid, config: PictureConfig) : Promise<Sprite>{
+    public async createSpriteAsync(id: string, config: PictureConfig) : Promise<Sprite>{
         // валидаия аргументов
         if(!config) throw new Error("config: PictureConfig can't be null.");
 
@@ -70,7 +70,7 @@ export class SpriteHolder{
 
 
     /** удалить спрайт из мира по его Id */
-    public deleteSpriteById(id: Guid){
+    public deleteSpriteById(id: string){
         let deleteSprites = this.sprites.toArray().filter((i) => i.id === id);
         if(deleteSprites && deleteSprites.length > 0)
         {
@@ -173,8 +173,8 @@ export class SpriteHolder{
                 return;
             }
 
-            // пересчитываем координаты спрайтов на физические координаты как они отрисовываются
-            let usePointCoordinates = sprite.isStaticCoordinates ? coordinates : preparedCoordinates; // берем те координаты, которые используются при расчетах для этого конркетного спрайта
+            // преобразовываем те координаты, в которых мы что-то должны с учетом того статический спрайт или нет
+            let usePointCoordinates = sprite.isStaticCoordinates ? coordinates : preparedCoordinates; 
 
             // получаем маску, по которой проверять пересечения (например клика мышки или пересечения спрайтов)
             let mask = this.getMaskBody(sprite);
@@ -219,10 +219,10 @@ export class SpriteHolder{
 
         // сперва проверяем пересечения под прямоугольнику т.к. это дешевая операция
         this.sprites.forEach(sprite => {
-            if(geometry.IntersectionFigures_RectangleAndRectangle(
-                                            checkedSprite.coordinates, checkedSprite.picSize,
-                                            sprite.coordinates, sprite.picSize)){
-                suitableSprites.add(sprite);
+            if(this.isSpritesIntersected(checkedSprite, sprite, true)
+                && sprite.id !== checkedSprite.id) { // если спрайт пересекся сам с собой, то в этом случае исключаем его из выборки){
+                
+                    suitableSprites.add(sprite);
             }
         })
 
@@ -242,14 +242,18 @@ export class SpriteHolder{
     /** пересеклись ли эти два конкретных спрайта?
      * 
      * Если необходимо узнать с кем вообще пересекается спрайт используйте: getAllIntersection
+     * @param checkOnlyByRectagle - если true, то проигнорирует фигуры спрайтов и будет проверять только по пересечению 
+     * прямоугольных областей. Проверка по прямугольной области - дешевая операция по тактам процессора.
      */
-    public isSpritesIntersected(first: Sprite, second: Sprite) : boolean{            
+    public isSpritesIntersected(first: Sprite, second: Sprite, checkOnlyByRectagle = false) : boolean{            
 
         let one = this.getMaskBody(first);
         let two = this.getMaskBody(second);
 
         // если оба спрайта - прямоугольники
-        if(first.mask.figure === Figure.rectangle && second.mask.figure === Figure.rectangle){
+        if( first.mask.figure === Figure.rectangle && second.mask.figure === Figure.rectangle
+            || checkOnlyByRectagle){
+            
             let isIntersection = geometry.IntersectionFigures_RectangleAndRectangle(
                                                             one.coordinates, one.size,
                                                             two.coordinates, two.size);
@@ -318,15 +322,15 @@ export class SpriteHolder{
     }
 
     /** возвращает маску, по которой проверять пересечения (например клика мышки или пересечения спрайтов) */
-    protected getMaskBody(sprite: Sprite) : MaskBody {
+    public getMaskBody(sprite: Sprite) : MaskBody {
 
         // расчет координат с учетом смещения
         let x = sprite.coordinates.x + sprite.mask.offset.x;
         let y = sprite.coordinates.y + sprite.mask.offset.y;
 
         // расчет ширины и высоты исходя из того, статический ли спрайт
-        let width = sprite.isStaticCoordinates ? sprite.mask.size.width : this._engine.render.getRealCutLength(sprite.mask.size.width); 
-        let height = sprite.isStaticCoordinates ? sprite.mask.size.height : this._engine.render.getRealCutLength(sprite.mask.size.height); 
+        let width = sprite.mask.size.width; 
+        let height = sprite.mask.size.height; 
 
         return new MaskBody( new X_Y(x, y), new Size(width, height) );
     }

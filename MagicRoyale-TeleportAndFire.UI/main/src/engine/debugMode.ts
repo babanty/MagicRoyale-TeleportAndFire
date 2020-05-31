@@ -1,6 +1,7 @@
 import { Engine } from "./engine";
-import { getOffsetValues, X_Y } from "./common";
+import { getOffsetValues, X_Y, Size } from "./common";
 import { Guid } from "guid-typescript";
+import { Figure, Sprite } from "./sprite";
 
 /** Класс отвечающий за дебаг-режим (режим разработчика) в игре. Выводит на экран кучу дополнительный инфы  */
 export class DebugMode{
@@ -95,6 +96,9 @@ export class DebugMode{
 
         // последним пишем сообщение
         this.debugInfoLines[this.reservedLinesNum - 1] = this.message;
+
+        // отрисовываем маски спрайтов
+        this.displaySpriteMask();
 
         // перерисовываем информацию
         this.displayDebugInfo();
@@ -192,6 +196,59 @@ export class DebugMode{
         for (let i = 0; i < this.debugInfoLines.length; i++) {
             canvas.fillText( this.debugInfoLines[i], 0, (this.debugInfoFontSize+7) * (i + 1));
         }
+    }
+
+    /** отрисовываем маски спрайтов */
+    private displaySpriteMask(){
+
+        this.engine.spriteHolder.sprites.forEach(sprite => {
+            
+            let spriteWrapper = this.engine.render.getSpriteWrapper(sprite);
+            // расчет координат с учетом смещения
+            let coordinates = new X_Y(spriteWrapper.x + sprite.mask.offset.x, spriteWrapper.y + sprite.mask.offset.y);
+            // расчет шири\высоты с учетом того как изменился wrapper относительно нормального размера спрайта
+            let width = (spriteWrapper.width / sprite.picSize.width) * sprite.mask.size.width;
+            let height = (spriteWrapper.height / sprite.picSize.height) * sprite.mask.size.height;
+            let size = new Size(width, height);
+
+            if(sprite.mask.figure === Figure.circle){
+                this.drawCircle(coordinates, size.width / 2, "rgba(255, 0, 0, 0.2)");
+            }
+
+            if(sprite.mask.figure === Figure.rectangle){
+                this.drawRectangle(coordinates, size, "rgba(255, 0, 0, 0.2)");
+            }
+        });
+    }
+
+    /**
+     * Нарисовать круг, пример: drawCircle(5,10, 3, rgba(0, 0, 255, 0.2)).
+     * @param coordinates - координаты где рисовать (предварительно их можно перевести в игровые с использвоанием класса render)
+     * @param radius - радиус круга
+     * @param color - цвет RGBA
+     */
+    private drawCircle(coordinates: X_Y, radius: number, color: string | CanvasGradient | CanvasPattern){
+        let canvas = this.engine.canvas.canvasElement.getContext('2d'); // Создаем 2d пространство, с ним далее работаем
+
+        canvas.beginPath();
+        canvas.arc(coordinates.x+radius, coordinates.y+radius, radius, 0, 2 * Math.PI, false);
+        canvas.fillStyle = color;
+        canvas.fill();
+        canvas.lineWidth = 1;
+        canvas.strokeStyle = color;
+        canvas.stroke();
+    }
+
+    /**
+     * Нарисовать прямоугольник drawRectangle(mask.coordinates, mask.size, "rgba(0, 0, 255, 0.5)");
+     * @param coordinates - коориднаты прямоуголньика
+     * @param size - размер прямоугольника
+     * @param color - цвет RGBA
+     */
+    private drawRectangle(coordinates: X_Y, size: Size,  color: string | CanvasGradient | CanvasPattern){
+        let canvas = this.engine.canvas.canvasElement.getContext('2d'); // Создаем 2d пространство, с ним далее работаем
+        canvas.fillStyle = color;
+        canvas.fillRect(coordinates.x, coordinates.y, size.width, size.height);
     }
 
 // - Режим разработчика:

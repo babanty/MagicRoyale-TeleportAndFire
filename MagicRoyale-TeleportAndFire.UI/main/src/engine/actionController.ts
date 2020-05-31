@@ -518,10 +518,6 @@ export class SetScaleEventInfo{
     public scaleTarget: X_Y;
 }
 
-export class ClickEventInfo{
-
-}
-
 /** событие о необходимости проскролить карту */
 export interface SetScrollMapEvent {
     (eventInfo: SetScrollMapEventInfo): void;
