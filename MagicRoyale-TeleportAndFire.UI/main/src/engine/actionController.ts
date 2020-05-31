@@ -580,8 +580,12 @@ export class UserInputController{
         if(this.mouseScrollingEnable){
             let cameraCoord = this.engine.render.camera.coordinates;
 
+            // корректируем силу скролла на масштаб карты
+            let scrollWidth = eventInfo.scroll.width / this.engine.render.camera.scaleMap;
+            let scrollHeight = eventInfo.scroll.height / this.engine.render.camera.scaleMap;
+
             // скроллим карту (перемещаемся по ней)
-            cameraCoord.setNewValues(cameraCoord.x + eventInfo.scroll.width, cameraCoord.y + eventInfo.scroll.height);
+            cameraCoord.setNewValues(cameraCoord.x + scrollWidth, cameraCoord.y + scrollHeight);
         }
     }
 

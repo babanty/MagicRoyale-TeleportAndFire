@@ -204,6 +204,9 @@ export class DebugMode{
         this.engine.spriteHolder.sprites.forEach(sprite => {
             
             let spriteWrapper = this.engine.render.getSpriteWrapper(sprite);
+            // откатываем смещение, которое видит только render
+            spriteWrapper.x -= sprite.offsetPic.x;
+            spriteWrapper.y -= sprite.offsetPic.y;
             // расчет координат с учетом смещения
             let coordinates = new X_Y(spriteWrapper.x + sprite.mask.offset.x, spriteWrapper.y + sprite.mask.offset.y);
             // расчет шири\высоты с учетом того как изменился wrapper относительно нормального размера спрайта
